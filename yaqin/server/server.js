@@ -2,6 +2,9 @@ import express from "express";
 import multer from "multer";
 import cors from "cors";
 import jwt from "jsonwebtoken";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import { supabase } from "./supabase/supabase.js";
 import { startBot } from "./bot/bot.js";
 import {
@@ -12,6 +15,10 @@ import {
   JWT_SECRET,
 } from "./middleware/auth.js";
 import { dbStore } from "./services/dbStore.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.join(__dirname, "../dist");
 
 const app = express();
 
@@ -77,12 +84,24 @@ async function uploadToSupabase(file, folder = "uploads") {
 }
 
 // --- 1. HEALTH CHECK ---
-app.get("/", (req, res) => {
+app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     message: "Yaqin Dating & Social Network API muvaffaqiyatli ishlayapti! 🚀",
     version: "2.0.0",
   });
+});
+
+app.get("/", (req, res, next) => {
+  const isHtml = req.headers.accept && req.headers.accept.includes("text/html");
+  if (!isHtml || !fs.existsSync(distPath)) {
+    return res.json({
+      status: "ok",
+      message: "Yaqin Dating & Social Network API muvaffaqiyatli ishlayapti! 🚀",
+      version: "2.0.0",
+    });
+  }
+  next();
 });
 
 // --- 2. AUTHENTICATION ENDPOINTS ---
@@ -179,12 +198,22 @@ app.get("/api/user/me", authenticateToken, async (req, res) => {
       return res.status(404).json({ error: "Foydalanuvchi topilmadi" });
     }
 
+    const isComplete = Boolean(
+      user.is_profile_complete === true ||
+        user.is_profile_complete === "true" ||
+        (user.gender &&
+          user.region &&
+          (user.birth_date || user.age) &&
+          (user.first_name || user.name))
+    );
+
     const analytics = await dbStore.getUserAnalytics(userId);
 
     return res.json({
       success: true,
       user: {
         ...user,
+        is_profile_complete: isComplete,
         stats: {
           viewsCount: analytics?.viewsCount || 0,
           totalLikesReceived: analytics?.totalLikesReceived || 0,
@@ -508,6 +537,17 @@ app.get("/api/dating/matches", authenticateToken, async (req, res) => {
     return res.status(500).json({ error: "Matchlarni yuklashda xatolik" });
   }
 });
+
+// Serve static frontend assets and SPA routes if dist folder exists
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.use((req, res, next) => {
+    if (req.method === "GET" && !req.path.startsWith("/api")) {
+      return res.sendFile(path.join(distPath, "index.html"));
+    }
+    next();
+  });
+}
 
 // Global error handler
 app.use((err, req, res, next) => {

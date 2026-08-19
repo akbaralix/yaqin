@@ -180,6 +180,48 @@
   ],
   "posts": [
     {
+      "id": "p_1787169063124_bly42",
+      "user_id": 907402803,
+      "caption": "Yaqin tarmog'ida birinchi postim! 🎉",
+      "location": "Toshkent shahri",
+      "images": [
+        "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
+      ],
+      "likes_count": 0,
+      "comments_count": 0,
+      "created_at": "2026-08-19T19:51:03.124Z",
+      "updated_at": "2026-08-19T19:51:03.124Z"
+    },
+    {
+      "id": "p_1787168827999_4se4z",
+      "user_id": 907402803,
+      "caption": "Yaqin tarmog'ida birinchi postim! 🎉",
+      "location": "Toshkent shahri",
+      "images": [
+        "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
+      ],
+      "likes_count": 1,
+      "comments_count": 1,
+      "created_at": "2026-08-19T19:47:07.999Z",
+      "updated_at": "2026-08-19T19:47:07.999Z"
+    },
+    {
+      "id": "p_1787168804268_xn48m",
+      "user_id": 907402803,
+      "caption": "Yaqin tarmog'ida birinchi postim! 🎉",
+      "location": "Toshkent shahri",
+      "images": [
+        "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
+      ],
+      "likes_count": 1,
+      "comments_count": 1,
+      "created_at": "2026-08-19T19:46:44.268Z",
+      "updated_at": "2026-08-19T19:46:44.268Z"
+    },
+    {
       "id": "p_1787162897858_igdl5",
       "user_id": 907402803,
       "caption": "Test uchun post",
@@ -191,8 +233,8 @@
         "https://kiwzebpbftpxmjzlrxzo.supabase.co/storage/v1/object/public/rasmlar/posts/1787162894565-gh9lbg.png",
         "https://kiwzebpbftpxmjzlrxzo.supabase.co/storage/v1/object/public/rasmlar/posts/1787162897215-vn9ae6.jpg"
       ],
-      "likes_count": 1,
-      "comments_count": 1,
+      "likes_count": 0,
+      "comments_count": 2,
       "created_at": "2026-08-19T18:08:17.858Z",
       "updated_at": "2026-08-19T18:08:17.858Z"
     },
@@ -307,10 +349,16 @@
       "created_at": "2026-08-19T18:18:58.465Z"
     },
     {
-      "id": "pl_1787165067670",
-      "post_id": "p_1787162897858_igdl5",
+      "id": "pl_1787168827970",
+      "post_id": "p_1787168804268_xn48m",
       "user_id": 907402803,
-      "created_at": "2026-08-19T18:44:27.670Z"
+      "created_at": "2026-08-19T19:47:07.970Z"
+    },
+    {
+      "id": "pl_1787169063091",
+      "post_id": "p_1787168827999_4se4z",
+      "user_id": 907402803,
+      "created_at": "2026-08-19T19:51:03.091Z"
     }
   ],
   "post_comments": [
@@ -362,6 +410,27 @@
       "user_id": 7610407015,
       "text": "Yaxshi",
       "created_at": "2026-08-19T18:25:30.601Z"
+    },
+    {
+      "id": "c_1787168804246_t0u1",
+      "post_id": "p_1787162897858_igdl5",
+      "user_id": 907402803,
+      "text": "Yaqin ilovasi ajoyib ishlayapti! 🚀",
+      "created_at": "2026-08-19T19:46:44.246Z"
+    },
+    {
+      "id": "c_1787168827982_04iv",
+      "post_id": "p_1787168804268_xn48m",
+      "user_id": 907402803,
+      "text": "Yaqin ilovasi ajoyib ishlayapti! 🚀",
+      "created_at": "2026-08-19T19:47:07.982Z"
+    },
+    {
+      "id": "c_1787169063106_kmsh",
+      "post_id": "p_1787168827999_4se4z",
+      "user_id": 907402803,
+      "text": "Yaqin ilovasi ajoyib ishlayapti! 🚀",
+      "created_at": "2026-08-19T19:51:03.106Z"
     }
   ],
   "dating_swipes": [

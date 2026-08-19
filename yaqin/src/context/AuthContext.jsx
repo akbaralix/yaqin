@@ -7,7 +7,16 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [user, setUser] = useState(null);
-  const [isProfileComplete, setIsProfileComplete] = useState(false);
+  const [isProfileComplete, setIsProfileComplete] = useState(() => {
+    const stored = localStorage.getItem("token");
+    if (!stored) return false;
+    try {
+      const decoded = jwtDecode(stored);
+      return Boolean(decoded.is_profile_complete || decoded.isProfileComplete);
+    } catch {
+      return false;
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [activeMatch, setActiveMatch] = useState(null);
 
@@ -19,14 +28,19 @@ export function AuthProvider({ children }) {
         try {
           const decoded = jwtDecode(storedToken);
           setToken(storedToken);
-          setIsProfileComplete(Boolean(decoded.is_profile_complete));
+          const fromToken = Boolean(decoded.is_profile_complete || decoded.isProfileComplete);
+          setIsProfileComplete(fromToken);
 
           // Fetch full user data from backend
           try {
             const data = await api.getCurrentUser();
             if (data?.user) {
               setUser(data.user);
-              setIsProfileComplete(Boolean(data.user.is_profile_complete));
+              const fromUser = Boolean(
+                data.user.is_profile_complete ||
+                (data.user.gender && data.user.region && (data.user.birth_date || data.user.age) && (data.user.first_name || data.user.name))
+              );
+              setIsProfileComplete(fromToken || fromUser);
             }
           } catch (fetchErr) {
             console.warn("Could not fetch full user profile:", fetchErr.message);
@@ -34,7 +48,7 @@ export function AuthProvider({ children }) {
             setUser({
               user_id: decoded.user_id,
               first_name: decoded.first_name,
-              is_profile_complete: Boolean(decoded.is_profile_complete),
+              is_profile_complete: fromToken,
             });
           }
         } catch (err) {
@@ -60,7 +74,12 @@ export function AuthProvider({ children }) {
     setToken(newToken);
     try {
       const decoded = jwtDecode(newToken);
-      const isComplete = Boolean(decoded.is_profile_complete || userData?.is_profile_complete);
+      const isComplete = Boolean(
+        decoded.is_profile_complete ||
+        decoded.isProfileComplete ||
+        userData?.is_profile_complete ||
+        (userData?.gender && userData?.region && (userData?.birth_date || userData?.age))
+      );
       setIsProfileComplete(isComplete);
       setUser(userData || decoded);
     } catch (e) {

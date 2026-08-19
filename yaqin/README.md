@@ -70,8 +70,24 @@ npm install
 # React + Vite ilovasini ishga tushirish
 npm run dev
 ```
-
 Brauzeringizda `http://localhost:5173` manzilini oching.
+
+### 3. 🐳 Docker orqali ishga tushirish (Tavsiya etiladi):
+
+**Docker Compose bilan (bitta buyruq):**
+```bash
+docker compose up --build -d
+```
+
+**Yoki to'g'ridan-to'g'ri Dockerfile bilan:**
+```bash
+# Image yaratish
+docker build -t yaqin-app .
+
+# Konteynerni ishga tushirish
+docker run -p 5001:5001 --name yaqin-container yaqin-app
+```
+Ilovani brauzeringizda `http://localhost:5001` manzilida oching.
 
 ---
 

@@ -15,13 +15,14 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [loginType, setLoginType] = useState("default");
   const [statusMessage, setStatusMessage] = useState("");
-  const { loginWithToken, token, isProfileComplete } = useAuth();
+  const { loginWithToken, token, isProfileComplete, loading: authLoading } = useAuth();
 
   const navigate = useNavigate();
   const channelRef = useRef(null);
 
   // If already logged in, redirect
   useEffect(() => {
+    if (authLoading) return;
     if (token) {
       if (isProfileComplete) {
         navigate("/", { replace: true });
@@ -29,7 +30,7 @@ function Login() {
         navigate("/complete-profile", { replace: true });
       }
     }
-  }, [token, isProfileComplete, navigate]);
+  }, [token, isProfileComplete, authLoading, navigate]);
 
   // Clean up supabase real-time subscription on unmount
   useEffect(() => {
@@ -60,10 +61,16 @@ function Login() {
             if (res?.token) {
               loginWithToken(res.token, res.user);
               toast.success("Google orqali muvaffaqiyatli kirdingiz!");
-              if (res.is_profile_complete) {
-                navigate("/");
+              const isComplete = Boolean(
+                res.is_profile_complete ||
+                res.isProfileComplete ||
+                res.user?.is_profile_complete ||
+                (res.user?.gender && res.user?.region && (res.user?.birth_date || res.user?.age))
+              );
+              if (isComplete) {
+                navigate("/", { replace: true });
               } else {
-                navigate("/complete-profile");
+                navigate("/complete-profile", { replace: true });
               }
             }
           } catch (err) {
@@ -137,13 +144,17 @@ function Login() {
                   channelRef.current = null;
                 }
 
-                const isComplete =
-                  data.is_profile_complete ?? data.isProfileComplete ?? false;
+                const isComplete = Boolean(
+                  data.is_profile_complete ||
+                  data.isProfileComplete ||
+                  data.user?.is_profile_complete ||
+                  (data.user?.gender && data.user?.region && (data.user?.birth_date || data.user?.age))
+                );
 
-                if (!isComplete) {
-                  navigate("/complete-profile");
+                if (isComplete) {
+                  navigate("/", { replace: true });
                 } else {
-                  navigate("/");
+                  navigate("/complete-profile", { replace: true });
                 }
               } else {
                 setStatusMessage(

@@ -65,11 +65,20 @@ export const getToken = async (req, res) => {
 
     // c) Profil majburiy maydonlari to'ldirilganligini aniqlash
     const isProfileComplete = Boolean(
-      user.gender &&
-        user.region &&
-        (user.birth_date || user.age) &&
-        user.first_name
+      user.is_profile_complete === true ||
+        user.is_profile_complete === "true" ||
+        (user.gender &&
+          user.region &&
+          (user.birth_date || user.age) &&
+          (user.first_name || user.name))
     );
+
+    if (isProfileComplete && !user.is_profile_complete) {
+      user = await dbStore.upsertUser({
+        ...user,
+        is_profile_complete: true,
+      });
+    }
 
     // d) JWT Token yaratamiz
     const token = jwt.sign(
@@ -88,7 +97,10 @@ export const getToken = async (req, res) => {
       token,
       isProfileComplete,
       is_profile_complete: isProfileComplete,
-      user,
+      user: {
+        ...user,
+        is_profile_complete: isProfileComplete,
+      },
     });
   } catch (err) {
     console.error("Token yaratishda xatolik:", err);
@@ -132,11 +144,20 @@ export const googleAuth = async (req, res) => {
     }
 
     const isProfileComplete = Boolean(
-      user.gender &&
-        user.region &&
-        (user.birth_date || user.age) &&
-        user.first_name
+      user.is_profile_complete === true ||
+        user.is_profile_complete === "true" ||
+        (user.gender &&
+          user.region &&
+          (user.birth_date || user.age) &&
+          (user.first_name || user.name))
     );
+
+    if (isProfileComplete && !user.is_profile_complete) {
+      user = await dbStore.upsertUser({
+        ...user,
+        is_profile_complete: true,
+      });
+    }
 
     const token = jwt.sign(
       {
@@ -154,7 +175,10 @@ export const googleAuth = async (req, res) => {
       token,
       isProfileComplete,
       is_profile_complete: isProfileComplete,
-      user,
+      user: {
+        ...user,
+        is_profile_complete: isProfileComplete,
+      },
     });
   } catch (err) {
     console.error("Google auth error:", err);

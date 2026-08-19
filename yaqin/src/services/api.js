@@ -1,4 +1,9 @@
-const API_BASE_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:5001";
+const API_BASE_URL =
+  import.meta.env.VITE_SERVER_URL !== undefined
+    ? import.meta.env.VITE_SERVER_URL
+    : import.meta.env.PROD
+    ? ""
+    : "http://localhost:5001";
 
 /**
  * Generic Fetch API client with automatic Bearer token injection
