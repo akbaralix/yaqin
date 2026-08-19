@@ -1,7 +1,7 @@
 ﻿# ====================================================
 # 1-Bosqich: Frontend (React + Vite) Build
 # ====================================================
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -26,7 +26,8 @@ RUN npm run build
 # ====================================================
 # 2-Bosqich: Backend Server & Production Runner
 # ====================================================
-FROM node:20-alpine AS runner
+# Supabase xatosi bermasligi uchun bu yerda ham Node.js 22 bo'lishi shart!
+FROM node:22-alpine AS runner
 
 WORKDIR /app
 
@@ -34,7 +35,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=5001
 
-# Backend server paketlarini o'rnatamiz (faqat production dependencylar)
+# Backend server paketlarini o'rnatamiz
 COPY server/package*.json ./server/
 RUN cd server && npm install --omit=dev --no-audit --no-fund
 
