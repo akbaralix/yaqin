@@ -1,0 +1,37 @@
+@import url(https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;800;900&display=swap);
+:root {
+  --btn-bg: #7e3ef6;
+  --btn-bg-gradient: #864eee, #9465eb;
+  --btn-border-radius: 33px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scrollbar-width: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+  font-size: 17px;
+}
+
+button {
+  border: none;
+  user-select: none;
+  cursor: pointer;
+}
+
+img {
+  /* Rasmni ajratib/selektsiya qilib bo'lmaydigan qiladi */
+  -webkit-user-select: none; /* Safari/Chrome */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE/Edge */
+  user-select: none; /* Standart */
+
+  /* Rasmni sichqoncha bilan sudrab (drag) bo'lmaydigan qiladi */
+  -webkit-user-drag: none;
+  user-drag: none;
+}

@@ -1,0 +1,277 @@
+.login-page {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  max-width: 450px;
+  width: 100%;
+  padding: 12px;
+  animation: motion 0.35s ease-out forwards;
+}
+
+@keyframes motion {
+  from {
+    opacity: 0;
+    /* -50% horizontal markazda turib, vertical tarafga +20px suriladi */
+    transform: translate(-50%, calc(-50% + 20px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.login-page h2 {
+  font-size: 30px;
+  font-weight: 500;
+}
+
+.login-page p {
+  font-size: 16px;
+  margin-top: 20px;
+  line-height: 1.2;
+}
+
+.login-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.back-btn {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.login-card button {
+  padding: 15px;
+  border-radius: var(--btn-border-radius);
+  background-color: var(--btn-bg);
+  color: white;
+  font-size: 18px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.login-tg-btn {
+  padding: 14px;
+  border-radius: var(--btn-border-radius);
+  width: 100%;
+  font-size: 18px;
+  margin-top: 20px;
+  background: linear-gradient(120deg, var(--btn-bg-gradient));
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+.login-tg-btn:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.8;
+
+  pointer-events: unset;
+}
+
+.profile-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* min-height: 100vh; */
+  padding: 20px;
+}
+
+.complete-profile-card {
+  padding: 30px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.complete-profile-card h2 {
+  color: #2b3674;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.user-profile-pic {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto;
+}
+.user-profile-pic img {
+  width: 100%;
+  height: 100%;
+}
+.avatar-placeholder {
+  cursor: pointer;
+  position: relative;
+}
+.avatar-placeholder svg {
+  z-index: 2;
+  margin: 0 auto;
+}
+.complete-profile-card .subtitle {
+  color: #a3ade0;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.form-group {
+  margin-top: 20px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  color: #2b3674;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e0e5f2;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #2b3674;
+  outline: none;
+  background-color: #f8fafc;
+  transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #4318ff;
+  background-color: #ffffff;
+}
+
+.gender-container {
+  display: flex;
+  gap: 12px;
+}
+.interests-wrapper {
+  /* max-width: 450px; */
+  /* margin: 0 auto; */
+  padding: 20px;
+}
+
+.interests-wrapper h3 {
+  color: #2b3674;
+  margin-bottom: 16px;
+  font-size: 18px;
+}
+
+.interests-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.interest-card {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.interest-card .icon {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  color: #707ebe;
+}
+
+.interest-card:hover {
+  background-color: #edf2f7;
+}
+
+/* Tanlangan (Active) tugma stili */
+.interest-card.active {
+  background-color: #3008e2;
+  color: #ffffff;
+  border-color: #080326;
+}
+
+.interest-card.active .icon {
+  color: #ffffff;
+}
+
+.save-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: #4318ff;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.gender-btn {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #e0e5f2;
+  background-color: #f8fafc;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b3674;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gender-btn:hover {
+  background-color: #edf2f7;
+}
+
+.gender-btn.active {
+  background-color: #4318ff;
+  color: #ffffff;
+  border-color: #4318ff;
+  box-shadow: 0 4px 12px rgba(67, 24, 255, 0.25);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: #4318ff;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.submit-btn:hover {
+  background-color: #3311db;
+}
+
+.submit-btn:disabled {
+  background-color: #a3ade0;
+  cursor: not-allowed;
+}

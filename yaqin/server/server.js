@@ -1,0 +1,524 @@
+import express from "express";
+import multer from "multer";
+import cors from "cors";
+import jwt from "jsonwebtoken";
+import { supabase } from "./supabase/supabase.js";
+import { startBot } from "./bot/bot.js";
+import {
+  getToken,
+  googleAuth,
+  authenticateToken,
+  optionalAuth,
+  JWT_SECRET,
+} from "./middleware/auth.js";
+import { dbStore } from "./services/dbStore.js";
+
+const app = express();
+
+// Middlewares
+app.use(cors());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+// Multer in-memory storage for handling avatar and post images (up to 10 images)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB per image
+  },
+});
+
+// Middleware wrappers that only invoke multer when Content-Type is multipart/form-data
+const handleMultipartSingle = (fieldName) => (req, res, next) => {
+  const ct = req.headers["content-type"] || "";
+  if (ct.includes("multipart/form-data")) {
+    return upload.single(fieldName)(req, res, next);
+  }
+  next();
+};
+
+const handleMultipartArray = (fieldName, maxCount = 10) => (req, res, next) => {
+  const ct = req.headers["content-type"] || "";
+  if (ct.includes("multipart/form-data")) {
+    return upload.array(fieldName, maxCount)(req, res, next);
+  }
+  next();
+};
+
+// Helper to upload file buffer to Supabase Storage "rasmlar" bucket
+async function uploadToSupabase(file, folder = "uploads") {
+  if (!file) return null;
+  const fileExt = (file.originalname || "jpg").split(".").pop();
+  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+
+  try {
+    const { error: uploadError } = await supabase.storage
+      .from("rasmlar")
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype || "image/jpeg",
+        upsert: true,
+      });
+
+    if (!uploadError) {
+      const { data: publicUrlData } = supabase.storage
+        .from("rasmlar")
+        .getPublicUrl(fileName);
+      return publicUrlData.publicUrl;
+    } else {
+      console.warn("Supabase upload warning:", uploadError.message);
+    }
+  } catch (err) {
+    console.warn("Storage upload exception:", err.message);
+  }
+
+  // Fallback: Convert buffer to data URI so images never break
+  const base64 = file.buffer.toString("base64");
+  return `data:${file.mimetype || "image/jpeg"};base64,${base64}`;
+}
+
+// --- 1. HEALTH CHECK ---
+app.get("/", (req, res) => {
+  res.json({
+    status: "ok",
+    message: "Yaqin Dating & Social Network API muvaffaqiyatli ishlayapti! 🚀",
+    version: "2.0.0",
+  });
+});
+
+// --- 2. AUTHENTICATION ENDPOINTS ---
+app.post("/api/auth/token", getToken);
+app.post("/api/auth/google", googleAuth);
+
+// --- 3. ONBOARDING / COMPLETE PROFILE ---
+app.post(
+  "/api/user/complete-profile",
+  authenticateToken,
+  handleMultipartSingle("avatar"),
+  async (req, res) => {
+    try {
+      const userId = req.user.user_id;
+      const { firstName, birthDate, region, gender, interests, bio } = req.body;
+
+      if (!firstName || !region || !gender) {
+        return res
+          .status(400)
+          .json({ error: "Barcha majburiy maydonlarni to'ldiring!" });
+      }
+
+      let profilePicUrl = null;
+      if (req.file) {
+        profilePicUrl = await uploadToSupabase(req.file, "avatars");
+      }
+
+      let parsedInterests = [];
+      if (interests) {
+        try {
+          parsedInterests =
+            typeof interests === "string" ? JSON.parse(interests) : interests;
+        } catch (e) {
+          parsedInterests = Array.isArray(interests) ? interests : [interests];
+        }
+      }
+
+      const calculatedAge = dbStore.calculateAge(birthDate);
+
+      const updatePayload = {
+        user_id: userId,
+        first_name: firstName.trim(),
+        birth_date: birthDate || null,
+        age: calculatedAge || 20,
+        region: region.trim(),
+        gender: gender,
+        interests: parsedInterests,
+        bio: bio ? bio.trim() : "",
+        is_profile_complete: true,
+      };
+
+      if (profilePicUrl) {
+        updatePayload.profile_pic = profilePicUrl;
+      }
+
+      // Save user to DB store & Supabase
+      const updatedUser = await dbStore.upsertUser(updatePayload);
+
+      // Generate NEW JWT token with is_profile_complete = true (Requirement 1)
+      const newToken = jwt.sign(
+        {
+          id: updatedUser.id,
+          user_id: updatedUser.user_id,
+          first_name: updatedUser.first_name,
+          is_profile_complete: true,
+        },
+        JWT_SECRET,
+        { expiresIn: "30d" }
+      );
+
+      return res.json({
+        success: true,
+        message: "Profil muvaffaqiyatli saqlandi!",
+        token: newToken,
+        is_profile_complete: true,
+        user: updatedUser,
+      });
+    } catch (err) {
+      console.error("Complete profile error:", err);
+      return res
+        .status(500)
+        .json({ error: "Profilni saqlashda kutilmagan xatolik yuz berdi" });
+    }
+  }
+);
+
+// --- 4. CURRENT USER INFO & PROFILE MANAGEMENT ---
+app.get("/api/user/me", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const user = await dbStore.findUser(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "Foydalanuvchi topilmadi" });
+    }
+
+    const analytics = await dbStore.getUserAnalytics(userId);
+
+    return res.json({
+      success: true,
+      user: {
+        ...user,
+        stats: {
+          viewsCount: analytics?.viewsCount || 0,
+          totalLikesReceived: analytics?.totalLikesReceived || 0,
+          totalPosts: analytics?.totalPosts || 0,
+          totalMatches: analytics?.totalMatches || 0,
+        },
+      },
+    });
+  } catch (err) {
+    console.error("Get /me error:", err);
+    return res.status(500).json({ error: "Foydalanuvchi ma'lumotlarini olishda xatolik" });
+  }
+});
+
+// Edit user profile (Requirement 5: Tahrirlash)
+app.put(
+  "/api/user/profile",
+  authenticateToken,
+  handleMultipartSingle("avatar"),
+  async (req, res) => {
+    try {
+      const userId = req.user.user_id;
+      const { firstName, bio, birthDate, region, gender, interests } = req.body;
+
+      let profilePicUrl = null;
+      if (req.file) {
+        profilePicUrl = await uploadToSupabase(req.file, "avatars");
+      }
+
+      let parsedInterests = undefined;
+      if (interests) {
+        try {
+          parsedInterests =
+            typeof interests === "string" ? JSON.parse(interests) : interests;
+        } catch (e) {
+          parsedInterests = Array.isArray(interests) ? interests : [interests];
+        }
+      }
+
+      const updatePayload = {
+        user_id: userId,
+      };
+
+      if (firstName) updatePayload.first_name = firstName.trim();
+      if (bio !== undefined) updatePayload.bio = bio.trim();
+      if (region) updatePayload.region = region.trim();
+      if (gender) updatePayload.gender = gender;
+      if (parsedInterests) updatePayload.interests = parsedInterests;
+      if (birthDate) {
+        updatePayload.birth_date = birthDate;
+        updatePayload.age = dbStore.calculateAge(birthDate);
+      }
+      if (profilePicUrl) {
+        updatePayload.profile_pic = profilePicUrl;
+      }
+
+      const updatedUser = await dbStore.upsertUser(updatePayload);
+
+      return res.json({
+        success: true,
+        message: "Profil muvaffaqiyatli yangilandi!",
+        user: updatedUser,
+      });
+    } catch (err) {
+      console.error("Edit profile error:", err);
+      return res.status(500).json({ error: "Profilni yangilashda xatolik" });
+    }
+  }
+);
+
+// User Profile Analytics (Requirement 5: Profil Analitikasi)
+app.get("/api/user/analytics/stats", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const analytics = await dbStore.getUserAnalytics(userId);
+    return res.json({
+      success: true,
+      analytics,
+    });
+  } catch (err) {
+    console.error("Analytics error:", err);
+    return res.status(500).json({ error: "Analitika ma'lumotlarini olishda xatolik" });
+  }
+});
+
+// View public profile of another user & record view
+app.get("/api/user/:userId", optionalAuth, async (req, res) => {
+  try {
+    const targetUserId = req.params.userId;
+    const viewerId = req.user?.user_id;
+
+    const user = await dbStore.findUser(targetUserId);
+    if (!user) {
+      return res.status(404).json({ error: "Profil topilmadi" });
+    }
+
+    if (viewerId) {
+      await dbStore.recordProfileView(viewerId, targetUserId);
+    }
+
+    const posts = await dbStore.getPosts({ authorUserId: targetUserId });
+
+    return res.json({
+      success: true,
+      user,
+      posts,
+    });
+  } catch (err) {
+    console.error("Get user profile error:", err);
+    return res.status(500).json({ error: "Profilni yuklashda xatolik" });
+  }
+});
+
+// --- 5. POSTS & FEED (Requirements 2 & 3) ---
+
+// Feed with filters and Smart Recommendation
+app.get("/api/posts", optionalAuth, async (req, res) => {
+  try {
+    const { region, gender, ageMin, ageMax, interest, search, userId } = req.query;
+    const currentUserId = req.user?.user_id;
+
+    const posts = await dbStore.getPosts({
+      currentUserId,
+      region,
+      gender,
+      ageMin,
+      ageMax,
+      interest,
+      search,
+      authorUserId: userId,
+    });
+
+    return res.json({
+      success: true,
+      posts,
+      count: posts.length,
+    });
+  } catch (err) {
+    console.error("Get posts feed error:", err);
+    return res.status(500).json({ error: "Postlarni yuklashda xatolik" });
+  }
+});
+
+// Create Post (1 to 10 images carousel) (Requirement 3: Post Yaratish)
+app.post(
+  "/api/posts",
+  authenticateToken,
+  handleMultipartArray("images", 10), // User can upload 1 to 10 images
+  async (req, res) => {
+    try {
+      const userId = req.user.user_id;
+      const { caption, location, existingImages } = req.body;
+
+      let uploadedImageUrls = [];
+
+      // 1. Upload newly selected files
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const url = await uploadToSupabase(file, "posts");
+          if (url) uploadedImageUrls.push(url);
+        }
+      }
+
+      // 2. Include any existing / provided image URLs
+      if (existingImages) {
+        try {
+          const parsed =
+            typeof existingImages === "string"
+              ? JSON.parse(existingImages)
+              : existingImages;
+          if (Array.isArray(parsed)) {
+            uploadedImageUrls = [...uploadedImageUrls, ...parsed];
+          }
+        } catch (e) {}
+      }
+
+      if (uploadedImageUrls.length === 0) {
+        return res
+          .status(400)
+          .json({ error: "Kamida 1 ta rasm yuklashingiz shart (1-10 ta)!" });
+      }
+
+      if (uploadedImageUrls.length > 10) {
+        return res
+          .status(400)
+          .json({ error: "Ko'pi bilan 10 ta rasm yuklash mumkin!" });
+      }
+
+      const newPost = await dbStore.createPost({
+        user_id: userId,
+        caption: caption ? caption.trim() : "",
+        location: location ? location.trim() : "",
+        images: uploadedImageUrls,
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: "Post muvaffaqiyatli chop etildi!",
+        post: newPost,
+      });
+    } catch (err) {
+      console.error("Create post error:", err);
+      return res.status(500).json({ error: "Post yaratishda xatolik yuz berdi" });
+    }
+  }
+);
+
+// Toggle Like on Post (Requirement 3: Interaktivlik - Like toggle)
+app.post("/api/posts/:postId/like", authenticateToken, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user.user_id;
+
+    const result = await dbStore.toggleLikePost(postId, userId);
+
+    return res.json({
+      success: true,
+      ...result,
+    });
+  } catch (err) {
+    console.error("Post like toggle error:", err);
+    return res.status(500).json({ error: "Like holatini o'zgartirib bo'lmadi" });
+  }
+});
+
+// Get Comments on Post
+app.get("/api/posts/:postId/comments", optionalAuth, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const comments = await dbStore.getComments(postId);
+
+    return res.json({
+      success: true,
+      comments,
+    });
+  } catch (err) {
+    console.error("Get comments error:", err);
+    return res.status(500).json({ error: "Izohlarni yuklashda xatolik" });
+  }
+});
+
+// Add Comment on Post (Requirement 3: Interaktivlik - Izohlar)
+app.post("/api/posts/:postId/comments", authenticateToken, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user.user_id;
+    const { text } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: "Izoh matnini kiriting" });
+    }
+
+    const comment = await dbStore.addComment(postId, userId, text);
+
+    return res.status(201).json({
+      success: true,
+      comment,
+    });
+  } catch (err) {
+    console.error("Add comment error:", err);
+    return res.status(500).json({ error: "Izoh qo'shishda xatolik yuz berdi" });
+  }
+});
+
+// --- 6. TANISHUV / DATING SWIPE (Requirement 4) ---
+
+// Get candidate profiles auto-filtered by opposite gender
+app.get("/api/dating/cards", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { region, ageMin, ageMax } = req.query;
+
+    const candidates = await dbStore.getDatingCandidates(userId, {
+      region,
+      ageMin,
+      ageMax,
+    });
+
+    return res.json({
+      success: true,
+      candidates,
+      count: candidates.length,
+    });
+  } catch (err) {
+    console.error("Get dating cards error:", err);
+    return res.status(500).json({ error: "Tanishuv profillarini yuklashda xatolik" });
+  }
+});
+
+// Swipe action (Like / Skip / Superlike) + Instant Match detection
+app.post("/api/dating/swipe", authenticateToken, async (req, res) => {
+  try {
+    const senderId = req.user.user_id;
+    const { targetId, action } = req.body;
+
+    if (!targetId || !action) {
+      return res.status(400).json({ error: "targetId va action yuborilmadi" });
+    }
+
+    const result = await dbStore.handleSwipe(senderId, targetId, action);
+
+    return res.json(result);
+  } catch (err) {
+    console.error("Dating swipe error:", err);
+    return res.status(500).json({ error: "Swipe amalini bajarishda xatolik" });
+  }
+});
+
+// Get all matches for current user
+app.get("/api/dating/matches", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const matches = await dbStore.getMatches(userId);
+
+    return res.json({
+      success: true,
+      matches,
+    });
+  } catch (err) {
+    console.error("Get matches error:", err);
+    return res.status(500).json({ error: "Matchlarni yuklashda xatolik" });
+  }
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("Express unhandled error:", err);
+  res.status(500).json({ error: "Server ichki xatoligi" });
+});
+
+// Start Telegram bot & Express Server
+startBot();
+
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => {
+  console.log(`🚀 Yaqin Server http://localhost:${PORT} manzilida ishlayapti`);
+});
