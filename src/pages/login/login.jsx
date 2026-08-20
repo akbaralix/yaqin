@@ -232,7 +232,7 @@ function Login() {
     <main className="login-page">
       <div className="app-brand-badge">
         <span className="brand-icon">
-          <BsHeartFill color="#ff3366" />
+          <BsHeartFill color="#7e3ef6" />
         </span>
         <span className="brand-name">Yaqin</span>
       </div>

@@ -58,7 +58,7 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
   const [region, setRegion] = useState(user?.region || "");
   const [gender, setGender] = useState(user?.gender || "male");
   const [interests, setInterests] = useState(
-    Array.isArray(user?.interests) ? user.interests : []
+    Array.isArray(user?.interests) ? user.interests : [],
   );
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(user?.profile_pic || null);
@@ -146,7 +146,10 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
                 }
                 alt="Avatar"
               />
-              <label htmlFor="edit-avatar-input" className="avatar-edit-icon-overlay">
+              <label
+                htmlFor="edit-avatar-input"
+                className="avatar-edit-icon-overlay"
+              >
                 <FaCamera />
               </label>
               <input
@@ -259,13 +262,9 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
               onClick={onClose}
               disabled={loading}
             >
-              Bekor qilish
+              <FaTimes />
             </button>
-            <button
-              type="submit"
-              className="submit-btn"
-              disabled={loading}
-            >
+            <button type="submit" className="submit-btn" disabled={loading}>
               {loading ? "Saqlanmoqda..." : "O'zgarishlarni saqlash"}
             </button>
           </div>

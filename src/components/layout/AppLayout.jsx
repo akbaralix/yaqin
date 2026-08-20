@@ -21,7 +21,7 @@ function AppLayout({ children }) {
       {/* Mobile Top Header */}
       <header className="mobile-top-header">
         <div className="mobile-brand">
-          <FaHeart className="mobile-brand-icon" />
+          <img src="public/icon.png" alt="" />
           <span>Yaqin</span>
         </div>
         <button

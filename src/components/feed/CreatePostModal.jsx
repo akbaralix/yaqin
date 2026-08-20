@@ -105,7 +105,8 @@ function CreatePostModal({ isOpen, onClose, onPostCreated }) {
           {/* Multi-Image Upload Area (1 to 10 images) */}
           <div className="post-upload-section">
             <label className="upload-section-title">
-              Rasmlar ({imagePreviews.length}/10) <span className="req-tag">* Kamida 1 ta</span>
+              Rasmlar ({imagePreviews.length}/10){" "}
+              <span className="req-tag">* Kamida 1 ta</span>
             </label>
 
             {imagePreviews.length === 0 ? (
@@ -135,7 +136,10 @@ function CreatePostModal({ isOpen, onClose, onPostCreated }) {
                 ))}
 
                 {imagePreviews.length < 10 && (
-                  <label htmlFor="post-images-input" className="preview-add-more">
+                  <label
+                    htmlFor="post-images-input"
+                    className="preview-add-more"
+                  >
                     <FaPlus />
                     <span>Qo'shish</span>
                   </label>
@@ -186,7 +190,7 @@ function CreatePostModal({ isOpen, onClose, onPostCreated }) {
               onClick={onClose}
               disabled={loading}
             >
-              Bekor qilish
+              <FaTimes />
             </button>
 
             <button

@@ -146,6 +146,7 @@
 }
 
 .form-group input,
+.form-group textarea,
 .form-group select {
   width: 100%;
   padding: 12px 16px;
@@ -156,6 +157,7 @@
   outline: none;
   background-color: #f8fafc;
   transition: border-color 0.2s ease;
+  font-family: "poppins";
 }
 
 .form-group input:focus,
@@ -194,6 +196,7 @@
   box-shadow: 1px 1px 1px 1px rgb(220, 215, 215);
   border-radius: 8px;
   gap: 12px;
+  font-family: "poppins";
 }
 
 .interest-card .icon {
@@ -231,12 +234,12 @@
 }
 .gender-btn {
   flex: 1;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid #e0e5f2;
   background-color: #f8fafc;
   border-radius: 10px;
   font-size: 14px;
-  font-weight: 600;
+  font-family: "poppins";
   color: #2b3674;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -249,7 +252,6 @@
 .gender-btn.active {
   background-color: var(--btn-bg);
   color: #ffffff;
-  border-color: #4318ff;
   box-shadow: 0 4px 12px rgba(67, 24, 255, 0.25);
 }
 
