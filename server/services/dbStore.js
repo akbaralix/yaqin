@@ -806,4 +806,70 @@ export const dbStore = {
       return null;
     }
   },
+
+  // 6. REALTIME CHAT MESSAGES
+  async getChatMessages(userId1, userId2) {
+    try {
+      const u1 = Number(userId1);
+      const u2 = Number(userId2);
+
+      const { data: messages, error } = await supabase
+        .from("messages")
+        .select("*")
+        .or(
+          `and(sender_id.eq.${u1},receiver_id.eq.${u2}),and(sender_id.eq.${u2},receiver_id.eq.${u1})`
+        )
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.warn("getChatMessages error:", error.message);
+        return [];
+      }
+      return messages || [];
+    } catch (err) {
+      console.error("getChatMessages exception:", err);
+      return [];
+    }
+  },
+
+  async sendMessage(senderId, receiverId, text) {
+    try {
+      const cleanSender = Number(senderId);
+      const cleanReceiver = Number(receiverId);
+
+      const { data: message, error } = await supabase
+        .from("messages")
+        .insert({
+          sender_id: cleanSender,
+          receiver_id: cleanReceiver,
+          text: text.trim(),
+          is_read: false,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("sendMessage error:", error.message);
+        throw error;
+      }
+      return message;
+    } catch (err) {
+      console.error("sendMessage exception:", err);
+      throw err;
+    }
+  },
+
+  async markMessagesAsRead(senderId, receiverId) {
+    try {
+      await supabase
+        .from("messages")
+        .update({ is_read: true })
+        .eq("sender_id", Number(senderId))
+        .eq("receiver_id", Number(receiverId))
+        .eq("is_read", false);
+    } catch (err) {
+      console.warn("markMessagesAsRead error:", err.message);
+    }
+  },
 };

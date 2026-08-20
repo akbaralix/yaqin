@@ -538,6 +538,48 @@ app.get("/api/dating/matches", authenticateToken, async (req, res) => {
   }
 });
 
+// --- 7. REALTIME CHAT MESSAGES ---
+app.get("/api/messages/:partnerId", authenticateToken, async (req, res) => {
+  try {
+    const currentUserId = req.user.user_id;
+    const partnerId = req.params.partnerId;
+
+    const messages = await dbStore.getChatMessages(currentUserId, partnerId);
+    await dbStore.markMessagesAsRead(partnerId, currentUserId);
+
+    return res.json({
+      success: true,
+      messages,
+    });
+  } catch (err) {
+    console.error("Get messages error:", err);
+    return res.status(500).json({ error: "Xabarlarni yuklashda xatolik" });
+  }
+});
+
+app.post("/api/messages/:partnerId", authenticateToken, async (req, res) => {
+  try {
+    const currentUserId = req.user.user_id;
+    const partnerId = req.params.partnerId;
+    const { text } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: "Xabar matni bo'sh bo'lishi mumkin emas" });
+    }
+
+    const message = await dbStore.sendMessage(currentUserId, partnerId, text);
+
+    return res.status(201).json({
+      success: true,
+      message,
+    });
+  } catch (err) {
+    console.error("Send message error:", err);
+    return res.status(500).json({ error: "Xabar yuborishda xatolik" });
+  }
+});
+
+
 // Serve static frontend assets and SPA routes if dist folder exists
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));

@@ -99,6 +99,17 @@ CREATE TABLE IF NOT EXISTS public.profile_views (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 9. REALTIME CHAT MESSAGES TABLE
+CREATE TABLE IF NOT EXISTS public.messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sender_id BIGINT NOT NULL REFERENCES public.users(user_id) ON DELETE CASCADE,
+    receiver_id BIGINT NOT NULL REFERENCES public.users(user_id) ON DELETE CASCADE,
+    match_id UUID REFERENCES public.matches(id) ON DELETE SET NULL,
+    text TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- INDEXES FOR MAXIMUM QUERY PERFORMANCE
 CREATE INDEX IF NOT EXISTS idx_posts_user_id ON public.posts(user_id);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON public.posts(created_at DESC);
@@ -110,6 +121,9 @@ CREATE INDEX IF NOT EXISTS idx_dating_swipes_target ON public.dating_swipes(targ
 CREATE INDEX IF NOT EXISTS idx_matches_user1 ON public.matches(user1_id);
 CREATE INDEX IF NOT EXISTS idx_matches_user2 ON public.matches(user2_id);
 CREATE INDEX IF NOT EXISTS idx_profile_views_profile ON public.profile_views(profile_id);
+CREATE INDEX IF NOT EXISTS idx_messages_sender ON public.messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_messages_receiver ON public.messages(receiver_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages(created_at ASC);
 
 -- ENABLE ROW LEVEL SECURITY
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
@@ -120,6 +134,10 @@ ALTER TABLE public.post_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.dating_swipes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profile_views ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+
+-- ENABLE REALTIME PUBLICATION FOR MESSAGES TABLE
+ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 
 -- POLICIES FOR PUBLIC / SERVICE ROLE / AUTHENTICATED
 DO $$
@@ -147,5 +165,8 @@ BEGIN
 
     DROP POLICY IF EXISTS "Public Auth Sessions" ON public.telegram_auth_sessions;
     CREATE POLICY "Public Auth Sessions" ON public.telegram_auth_sessions FOR ALL USING (true) WITH CHECK (true);
+
+    DROP POLICY IF EXISTS "Public Messages" ON public.messages;
+    CREATE POLICY "Public Messages" ON public.messages FOR ALL USING (true) WITH CHECK (true);
 END
 $$;

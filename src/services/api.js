@@ -126,4 +126,13 @@ export const api = {
     }),
 
   getMatches: () => request("/api/dating/matches"),
+
+  // Realtime Chat Messages
+  getChatMessages: (partnerId) => request(`/api/messages/${partnerId}`),
+
+  sendMessage: (partnerId, text) =>
+    request(`/api/messages/${partnerId}`, {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    }),
 };
