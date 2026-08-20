@@ -34,16 +34,6 @@ export const getToken = async (req, res) => {
     }
 
     if (!session) {
-      const store = dbStore.getStore();
-      const st = store.telegram_auth_sessions?.find(
-        (s) => s.otp_code === cleanOtp && s.status === "verified"
-      );
-      if (st) {
-        session = st;
-      }
-    }
-
-    if (!session) {
       return res.status(400).json({
         error: "Sessiya tasdiqlanmagan, eskirgan yoki topilmadi. Botda 'Kirish'ni bosing.",
       });
