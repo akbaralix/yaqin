@@ -684,18 +684,17 @@ body {
   color: var(--text-muted);
 }
 .post-location {
-  max-width: 140px;         
+  max-width: 140px;
   white-space: nowrap;
-  overflow: hidden;         
-  text-overflow: ellipsis;   
-  
+  overflow: hidden;
+  text-overflow: ellipsis;
 
-  display: inline-block;   
+  display: inline-block;
   vertical-align: middle;
 }
-.post-time{
+.post-time {
   color: var(--text-muted);
-font-size: 12px;
+  font-size: 12px;
 }
 
 .recommendation-badge {
@@ -2783,14 +2782,13 @@ font-size: 12px;
   .app-main-content {
     margin-left: 0;
     margin-right: 0;
-    padding: 72px 8px 84px; /
+    padding: 72px 8px 84px;
   }
 
-  .recommendation-badge{
+  .recommendation-badge {
     font-weight: 500;
     padding: 4px;
     width: fit-content;
-
   }
   /* Bottom Navigation Bar on Mobile */
   .app-bottom-nav {
