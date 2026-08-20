@@ -19,11 +19,12 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
   const [showHeartAnim, setShowHeartAnim] = useState(false);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
 
-  const images = Array.isArray(post.images) && post.images.length > 0
-    ? post.images
-    : [
-        "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",
-      ];
+  const images =
+    Array.isArray(post.images) && post.images.length > 0
+      ? post.images
+      : [
+          "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",
+        ];
 
   const handlePrevImg = (e) => {
     e.stopPropagation();
@@ -88,7 +89,7 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
   const formatTime = (isoString) => {
     if (!isoString) return "";
     const diffHours = Math.floor(
-      (Date.now() - new Date(isoString).getTime()) / (1000 * 60 * 60)
+      (Date.now() - new Date(isoString).getTime()) / (1000 * 60 * 60),
     );
     if (diffHours < 1) return "Hozirgina";
     if (diffHours < 24) return `${diffHours} soat oldin`;
@@ -127,14 +128,16 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
                   <FaMapMarkerAlt /> {post.author.region}
                 </span>
               ) : null}
-              <span className="post-time">• {formatTime(post.created_at)}</span>
             </div>
           </div>
         </div>
 
         {/* Recommendation Score / Shared Interests Badge */}
         {post.recommendationScore && post.recommendationScore > 75 && (
-          <div className="recommendation-badge" title="Sizning qiziqishlaringiz va joylashuvingizga mos">
+          <div
+            className="recommendation-badge"
+            title="Sizning qiziqishlaringiz va joylashuvingizga mos"
+          >
             <IoSparkles /> Sizga mos
           </div>
         )}
@@ -202,11 +205,7 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
             onClick={handleToggleLike}
             aria-label="Like"
           >
-            {isLiked ? (
-              <FaHeart className="heart-filled" />
-            ) : (
-              <FaRegHeart />
-            )}
+            {isLiked ? <FaHeart className="heart-filled" /> : <FaRegHeart />}
             <span className="action-count">{likesCount}</span>
           </button>
 
@@ -233,7 +232,9 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
       <div className="post-body">
         {post.caption && (
           <p className="post-caption">
-            <span className="post-caption-author">{post.author?.first_name}</span>{" "}
+            <span className="post-caption-author">
+              {post.author?.first_name} :
+            </span>{" "}
             {post.caption}
           </p>
         )}
@@ -259,6 +260,7 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
             Barcha {post.comments_count} ta izohni ko'rish...
           </button>
         )}
+        <span className="post-time">{formatTime(post.created_at)}</span>
       </div>
     </article>
   );

@@ -1,4 +1,4 @@
-﻿version: '3.8'
+﻿version: "3.8"
 
 services:
   yaqin-app:
@@ -15,7 +15,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5001
-      - BOT_TOKEN=8972376368:AAHJ7FBA-1kZf-VKaDHff0JKv78wQ2oadhY
+      - BOT_TOKEN=8934833118:AAHbxmKnaCDPhbuw7bxUzhTISp0xChs9h_0
       - VITE_SUPABASE_URL=https://kiwzebpbftpxmjzlrxzo.supabase.co
       - VITE_SUPABASE_ANON_KEY=sb_publishable_SUguTwt-uxKFy-IAW9ORtg_mTPkrXw-
       - JWT_SECRET=yaqin_super_secret_jwt_key_2026_modern_dating_network

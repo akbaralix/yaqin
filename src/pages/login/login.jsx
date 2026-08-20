@@ -15,7 +15,12 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [loginType, setLoginType] = useState("default");
   const [statusMessage, setStatusMessage] = useState("");
-  const { loginWithToken, token, isProfileComplete, loading: authLoading } = useAuth();
+  const {
+    loginWithToken,
+    token,
+    isProfileComplete,
+    loading: authLoading,
+  } = useAuth();
 
   const navigate = useNavigate();
   const channelRef = useRef(null);
@@ -65,7 +70,9 @@ function Login() {
                 res.is_profile_complete ||
                 res.isProfileComplete ||
                 res.user?.is_profile_complete ||
-                (res.user?.gender && res.user?.region && (res.user?.birth_date || res.user?.age))
+                (res.user?.gender &&
+                  res.user?.region &&
+                  (res.user?.birth_date || res.user?.age)),
               );
               if (isComplete) {
                 navigate("/", { replace: true });
@@ -148,7 +155,9 @@ function Login() {
                   data.is_profile_complete ||
                   data.isProfileComplete ||
                   data.user?.is_profile_complete ||
-                  (data.user?.gender && data.user?.region && (data.user?.birth_date || data.user?.age))
+                  (data.user?.gender &&
+                    data.user?.region &&
+                    (data.user?.birth_date || data.user?.age)),
                 );
 
                 if (isComplete) {
@@ -211,7 +220,7 @@ function Login() {
 
       listenToAuthStatus(otp);
 
-      window.open(`https://t.me/Uzumkinobot?start=${otp}`, "_blank");
+      window.open(`https://t.me/Yaqinauthbot?start=${otp}`, "_blank");
     } catch (err) {
       console.error("loginTG Catch Error:", err);
       setStatusMessage("Kutilmagan xatolik.");
@@ -271,8 +280,8 @@ function Login() {
           </button>
           <h2>Telegram orqali kirish</h2>
           <p>
-            Pastdagi tugmani bosganingizda <b>@Uzumkinobot</b> botiga o'tasiz va
-            u yerda "✅ Kirish" tugmasi orqali hisobingizni tasdiqlaysiz.
+            Pastdagi tugmani bosganingizda <b>@Yaqinauth</b> botiga o'tasiz va u
+            yerda "✅ Kirish" tugmasi orqali hisobingizni tasdiqlaysiz.
           </p>
 
           {statusMessage && <p className="status-message">{statusMessage}</p>}

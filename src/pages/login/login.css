@@ -93,7 +93,7 @@
 }
 
 .complete-profile-card {
-  padding: 30px;
+  padding: 10px;
   border-radius: 16px;
   width: 100%;
   max-width: 420px;
@@ -140,10 +140,9 @@
 }
 
 .form-group label {
-  color: #2b3674;
+  color: #000000;
   font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .form-group input,
@@ -170,13 +169,11 @@
   gap: 12px;
 }
 .interests-wrapper {
-  /* max-width: 450px; */
-  /* margin: 0 auto; */
-  padding: 20px;
+  padding: 10px;
 }
 
 .interests-wrapper h3 {
-  color: #2b3674;
+  color: #5836e0;
   margin-bottom: 16px;
   font-size: 18px;
 }
@@ -185,6 +182,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  margin-top: 10px;
   margin-bottom: 20px;
 }
 
@@ -192,6 +190,8 @@
   display: flex;
   align-items: center;
   padding: 5px;
+  background-color: #ffffff;
+  box-shadow: 1px 1px 1px 1px rgb(220, 215, 215);
   border-radius: 8px;
   gap: 12px;
 }
@@ -200,7 +200,7 @@
   display: flex;
   align-items: center;
   font-size: 18px;
-  color: #707ebe;
+  color: var(--btn-bg);
 }
 
 .interest-card:hover {
@@ -247,7 +247,7 @@
 }
 
 .gender-btn.active {
-  background-color: #4318ff;
+  background-color: var(--btn-bg);
   color: #ffffff;
   border-color: #4318ff;
   box-shadow: 0 4px 12px rgba(67, 24, 255, 0.25);
@@ -256,19 +256,19 @@
 .submit-btn {
   width: 100%;
   padding: 14px;
-  background-color: #4318ff;
+  background-color: var(--btn-bg);
   color: #ffffff;
   border: none;
   border-radius: 10px;
   font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 
   cursor: pointer;
   margin-top: 10px;
   transition: background-color 0.2s ease;
-}
-
-.submit-btn:hover {
-  background-color: #3311db;
 }
 
 .submit-btn:disabled {

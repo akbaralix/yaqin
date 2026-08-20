@@ -25,13 +25,15 @@ button {
 }
 
 img {
-  /* Rasmni ajratib/selektsiya qilib bo'lmaydigan qiladi */
-  -webkit-user-select: none; /* Safari/Chrome */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* IE/Edge */
-  user-select: none; /* Standart */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 
-  /* Rasmni sichqoncha bilan sudrab (drag) bo'lmaydigan qiladi */
   -webkit-user-drag: none;
   user-drag: none;
+}
+
+textarea {
+  resize: none;
 }

@@ -12,9 +12,12 @@ import {
   FaFilm,
   FaDumbbell,
   FaCamera,
+  FaChess,
   FaUtensils,
   FaPalette,
 } from "react-icons/fa";
+import { GrFormNextLink } from "react-icons/gr";
+
 import { IoArrowBackOutline, IoSparkles } from "react-icons/io5";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
@@ -48,6 +51,7 @@ const interestsList = [
   { id: "gaming", name: "O'yinlar (Gaming)", icon: <FaGamepad /> },
   { id: "movies", name: "Kino & Seriallar", icon: <FaFilm /> },
   { id: "photo", name: "Suratga olish", icon: <FaCamera /> },
+  { id: "chees", name: "Shaxmat o'ynash", icon: <FaChess /> },
   { id: "cooking", name: "Kulinariya", icon: <FaUtensils /> },
   { id: "art", name: "Rasm chizish / San'at", icon: <FaPalette /> },
 ];
@@ -155,8 +159,8 @@ function CompleteProfile() {
       toast.error("Iltimos, jinsingizni tanlang!");
       return;
     }
-    if (selectedInterests.length === 0) {
-      toast.error("Kamida 1 ta qiziqishni tanlang!");
+    if (selectedInterests.length === 2) {
+      toast.error("Kamida 3 ta qiziqishni tanlang!");
       return;
     }
 
@@ -201,7 +205,10 @@ function CompleteProfile() {
     <div className="profile-container">
       {/* 1-BOSQICH: Rasm, Ism, Sana, Viloyat */}
       {complateType === "step1" && (
-        <form className="complete-profile-card fade-in-content" onSubmit={handleNextStep}>
+        <form
+          className="complete-profile-card fade-in-content"
+          onSubmit={handleNextStep}
+        >
           <div className="step-progress-bar">
             <div className="step-dot active">1</div>
             <div className="step-line"></div>
@@ -210,7 +217,9 @@ function CompleteProfile() {
 
           <h2>Profilni to'ldirish (1/2)</h2>
           <p className="subtitle">
-            {formData.firstName ? `Salom, ${formData.firstName}! ` : "Xush kelibsiz! "}
+            {formData.firstName
+              ? `Salom, ${formData.firstName}! `
+              : "Xush kelibsiz! "}
             Tanishuvlar uchun shaxsiy ma'lumotlaringizni kiriting.
           </p>
 
@@ -289,14 +298,18 @@ function CompleteProfile() {
           </div>
 
           <button type="submit" className="submit-btn">
-            Keyingisi (Qiziqishlar & Jins)
+            Keyingisi
+            <GrFormNextLink />
           </button>
         </form>
       )}
 
       {/* 2-BOSQICH: Jins, Bio va Qiziqishlar */}
       {complateType === "step2" && (
-        <form className="complete-profile-card fade-in-content" onSubmit={handleSubmit}>
+        <form
+          className="complete-profile-card fade-in-content"
+          onSubmit={handleSubmit}
+        >
           <div className="step-progress-bar">
             <div className="step-dot completed">✓</div>
             <div className="step-line filled"></div>
@@ -304,7 +317,9 @@ function CompleteProfile() {
           </div>
 
           <h2>Profilni to'ldirish (2/2)</h2>
-          <p className="subtitle">Mos tavsiyalar olish uchun qiziqishlaringizni belgilang.</p>
+          <p className="subtitle">
+            Mos tavsiyalar olish uchun qiziqishlaringizni belgilang.
+          </p>
 
           <div className="form-group">
             <label>Jinsingiz *</label>
@@ -340,7 +355,10 @@ function CompleteProfile() {
 
           <div className="form-group">
             <div className="interests-wrapper">
-              <label>Qiziqishlaringizni tanlang * ({selectedInterests.length} ta tanlandi)</label>
+              <label>
+                Qiziqishlaringizni tanlang * ({selectedInterests.length} ta
+                tanlandi)
+              </label>
               <div className="interests-grid">
                 {interestsList.map((item) => {
                   const isSelected = selectedInterests.includes(item.name);
@@ -369,11 +387,7 @@ function CompleteProfile() {
               <IoArrowBackOutline />
             </button>
 
-            <button
-              type="submit"
-              className="submit-btn"
-              disabled={loading}
-            >
+            <button type="submit" className="submit-btn" disabled={loading}>
               {loading ? "Saqlanmoqda..." : "Saqlash va Boshlash 🚀"}
             </button>
           </div>
@@ -387,7 +401,10 @@ function CompleteProfile() {
             <IoSparkles />
           </div>
           <h2>🎉 Tabriklaymiz!</h2>
-          <p>Profilingiz muvaffaqiyatli yaratildi. Asosiy lentaga yo'naltirilmoqdasiz...</p>
+          <p>
+            Profilingiz muvaffaqiyatli yaratildi. Asosiy lentaga
+            yo'naltirilmoqdasiz...
+          </p>
         </div>
       )}
     </div>

@@ -39,7 +39,9 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
           <div className="profile-title-row">
             <h1 className="profile-full-name">
               {user.first_name}
-              {user.age && <span className="profile-age">, {user.age} yosh</span>}
+              {user.age && (
+                <span className="profile-age">, {user.age} yosh</span>
+              )}
             </h1>
             <button className="profile-edit-btn" onClick={onOpenEdit}>
               <FaEdit /> Profilni tahrirlash
@@ -63,7 +65,8 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
             <p className="profile-bio-text">{user.bio}</p>
           ) : (
             <p className="profile-bio-empty">
-              O'zingiz haqingizda ma'lumot kiritilmagan. "Profilni tahrirlash" orqali qo'shing.
+              O'zingiz haqingizda ma'lumot kiritilmagan. "Profilni tahrirlash"
+              orqali qo'shing.
             </p>
           )}
 
@@ -98,7 +101,7 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
           onClick={() => onTabChange("analytics")}
         >
           <FaChartLine />
-          <span>Profil Analitikasi & Statistika</span>
+          <span>Statistika</span>
         </button>
       </div>
     </div>
