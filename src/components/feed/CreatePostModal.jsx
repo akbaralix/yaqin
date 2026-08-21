@@ -185,20 +185,11 @@ function CreatePostModal({ isOpen, onClose, onPostCreated }) {
 
           <div className="modal-footer">
             <button
-              type="button"
-              className="cancel-btn"
-              onClick={onClose}
-              disabled={loading}
-            >
-              <FaTimes />
-            </button>
-
-            <button
               type="submit"
               className="submit-post-btn"
               disabled={loading || images.length === 0}
             >
-              {loading ? "Yuklanmoqda..." : "Ulashish (Publish) 🚀"}
+              {loading ? "Yuklanmoqda..." : "Ulashish 🚀"}
             </button>
           </div>
         </form>

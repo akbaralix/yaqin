@@ -72,7 +72,6 @@ function DatingPage() {
       const res = await api.swipeCandidate(targetId, action);
 
       if (res?.isMatch) {
-        // Trigger Match modal celebration!
         setActiveMatchUser(res.matchedUser || candidate);
       } else if (action === "like") {
         toast.success("Yoqdi! ❤️ Agar u ham yoqtirsa, match bo'ladi");
@@ -86,16 +85,15 @@ function DatingPage() {
     user?.gender === "male"
       ? "Ayollar profillari"
       : user?.gender === "female"
-      ? "Erkaklar profillari"
-      : "Barcha profillar";
+        ? "Erkaklar profillari"
+        : "Barcha profillar";
 
   return (
     <div className="dating-page-container">
-      {/* Dating Header Bar */}
       <div className="dating-top-bar">
         <div className="dating-title-box">
           <h2>
-            <FaFire className="dating-fire-icon" /> Tanishuv (Swipe)
+            <FaFire className="dating-fire-icon" /> Tanishuv
           </h2>
           <span className="dating-gender-badge">
             <FaVenusMars /> {targetGenderText}
@@ -167,7 +165,7 @@ function DatingPage() {
         ) : candidates.length === 0 ? (
           <div className="dating-empty-card fade-in-content">
             <div className="empty-fire-circle">
-              <FaHeart />
+              <img src="/utya-duck-icon/utyaduckicon12.png" alt="" />{" "}
             </div>
             <h3>Hozircha yangi nomzodlar qolmadi</h3>
             <p>

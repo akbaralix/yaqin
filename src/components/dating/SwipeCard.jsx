@@ -107,13 +107,13 @@ function SwipeCard({ candidate, onSwipe, isTop }) {
             className="swipe-stamp stamp-like"
             style={{ opacity: likeOpacity }}
           >
-            LIKE ❤️
+            YOQDI ❤️
           </div>
           <div
             className="swipe-stamp stamp-skip"
             style={{ opacity: skipOpacity }}
           >
-            NOPE ❌
+            YO'Q ❌
           </div>
         </>
       )}
@@ -145,7 +145,9 @@ function SwipeCard({ candidate, onSwipe, isTop }) {
         <div className="dating-name-row">
           <h3 className="dating-user-name">
             {candidate.first_name}
-            {candidate.age && <span className="dating-age">, {candidate.age}</span>}
+            {candidate.age && (
+              <span className="dating-age">, {candidate.age}</span>
+            )}
           </h3>
           <button
             className="info-toggle-btn"
@@ -177,7 +179,7 @@ function SwipeCard({ candidate, onSwipe, isTop }) {
             <div className="dating-interests-row">
               {candidate.interests.slice(0, 4).map((interest, idx) => {
                 const isShared = candidate.sharedInterests?.some(
-                  (si) => si.toLowerCase() === interest.toLowerCase()
+                  (si) => si.toLowerCase() === interest.toLowerCase(),
                 );
                 return (
                   <span
@@ -194,7 +196,10 @@ function SwipeCard({ candidate, onSwipe, isTop }) {
 
       {/* Action Buttons (Visible on Top Card) */}
       {isTop && (
-        <div className="dating-actions-bar" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="dating-actions-bar"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             className="dating-action-btn skip"
             onClick={() => onSwipe(candidate.user_id, "skip")}

@@ -5,9 +5,9 @@ import RightSidebar from "./RightSidebar";
 import CreatePostModal from "../feed/CreatePostModal";
 import MatchModal from "../dating/MatchModal";
 import { useAuth } from "../../context/AuthContext";
-import { FaHeart, FaPlus } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
-
+import logoIcon from "/icon.png";
 function AppLayout({ children }) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { activeMatch, setActiveMatch } = useAuth();
@@ -21,7 +21,7 @@ function AppLayout({ children }) {
       {/* Mobile Top Header */}
       <header className="mobile-top-header">
         <div className="mobile-brand">
-          <img src="public/icon.png" alt="" />
+          <img src={logoIcon} alt="" />
           <span>Yaqin</span>
         </div>
         <button

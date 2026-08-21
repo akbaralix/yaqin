@@ -6,13 +6,14 @@ import {
   FaTh,
   FaCalendarAlt,
 } from "react-icons/fa";
-
+import allicon from "/utya-duck-icon/utyaduckicon11.png";
+import fmale from "/gender-icon/fmale/fmale-icon5.jpg";
+import male from "/gender-icon/male/male-icon4.jpg";
 function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
   if (!user) return null;
 
   return (
     <div className="profile-header-card">
-      {/* Top Banner & Avatar */}
       <div className="profile-banner-bg" />
 
       <div className="profile-main-meta">
@@ -26,23 +27,22 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
             className="profile-big-avatar"
           />
           {user.gender && (
-            <span
+            <img
               className={`gender-badge ${user.gender}`}
               title={user.gender === "male" ? "Erkak" : "Ayol"}
-            >
-              {user.gender === "male" ? "👨" : "👩"}
-            </span>
+              src={user.gender === "male" ? male : fmale}
+            ></img>
           )}
         </div>
 
         <div className="profile-names-section">
           <div className="profile-title-row">
-            <h1 className="profile-full-name">
-              {user.first_name}
+            <div className="profile-full-name">
+              <h1>{user.first_name}</h1> <img src={allicon} alt="" />
               {user.age && (
-                <span className="profile-age">, {user.age} yosh</span>
+                <span className="profile-age"> ● {user.age} yosh</span>
               )}
-            </h1>
+            </div>
             <button className="profile-edit-btn" onClick={onOpenEdit}>
               <FaEdit /> Profilni tahrirlash
             </button>

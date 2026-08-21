@@ -887,6 +887,8 @@ body {
   font-size: 14px;
   line-height: 1.5;
   margin-top: 6px;
+  max-height: 100px;
+  overflow-y: auto;
 }
 
 .post-caption-author {
@@ -1273,14 +1275,10 @@ body {
 .empty-fire-circle {
   width: 70px;
   height: 70px;
-  border-radius: 50%;
-  background: #fff1f2;
-  color: var(--accent-pink);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
-  margin: 0 auto 18px;
+  margin: 0 auto 40px;
 }
 
 .reload-candidates-btn {
@@ -1289,7 +1287,6 @@ body {
   border-radius: var(--radius-md);
   background: var(--primary);
   color: #fff;
-  font-weight: 700;
   font-size: 14px;
   display: inline-flex;
   align-items: center;
@@ -1467,7 +1464,7 @@ body {
   position: absolute;
   bottom: 6px;
   right: 6px;
-  background: #fff;
+  background: none;
   border-radius: 50%;
   width: 28px;
   height: 28px;
@@ -1475,9 +1472,10 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-sm);
-  font-size: 14px;
 }
-
+.gender-badge img {
+  width: 510px;
+}
 .profile-title-row {
   display: flex;
   align-items: center;
@@ -1487,8 +1485,18 @@ body {
 }
 
 .profile-full-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.profile-full-name h1 {
   font-size: 24px;
   font-weight: 800;
+}
+.profile-full-name img {
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
 }
 
 .profile-age {
@@ -1911,7 +1919,7 @@ body {
 
 .match-name-row h4 {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .match-region {
@@ -1923,15 +1931,22 @@ body {
   margin: 4px 0 8px;
 }
 
+.match-card-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 .match-bio-excerpt {
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.4;
   margin-bottom: 14px;
+
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .start-chat-btn {
@@ -1940,8 +1955,7 @@ body {
   border-radius: var(--radius-md);
   background: var(--primary-gradient);
   color: #fff;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1956,6 +1970,9 @@ body {
   border: 1px solid var(--card-border);
 }
 
+.matches-empty-state h3 {
+  font-weight: 500;
+}
 .empty-heart-box {
   width: 64px;
   height: 64px;
@@ -1968,7 +1985,6 @@ body {
   justify-content: center;
   margin: 0 auto 16px;
 }
-
 .go-swipe-btn {
   display: inline-flex;
   align-items: center;
@@ -1978,7 +1994,6 @@ body {
   border-radius: var(--radius-md);
   background: var(--primary-gradient);
   color: #fff;
-  font-weight: 700;
   font-size: 14px;
   text-decoration: none;
 }
@@ -2330,8 +2345,8 @@ body {
   border-radius: var(--radius-sm);
   background: var(--primary-gradient);
   color: #fff;
-  font-weight: 700;
-  font-size: 13px;
+  font-size: 15px;
+  font-family: "poppins";
   cursor: pointer;
 }
 
@@ -2510,11 +2525,16 @@ body {
   opacity: 0.8;
 }
 
+.chat-input-wrapper {
+  position: relative;
+}
+
 .chat-input-form {
   padding: 12px 16px;
   border-top: 1px solid var(--card-border);
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 .chat-input-form input {
@@ -2537,6 +2557,161 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+/* Sticker Toggle Button */
+.sticker-toggle-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color 0.2s, background 0.2s;
+}
+
+.sticker-toggle-btn:hover {
+  color: var(--primary);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+/* Sticker Picker Popup */
+.sticker-picker-popup {
+  position: absolute;
+  bottom: 100%;
+  left: 8px;
+  right: 8px;
+  z-index: 100;
+  margin-bottom: 6px;
+  animation: stickerSlideUp 0.2s ease-out;
+}
+
+@keyframes stickerSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Sticker Picker Container */
+.sticker-picker-container {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sticker Grid */
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sticker-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sticker-grid::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.sticker-item {
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 6px;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+}
+
+.sticker-item:hover {
+  background: #f3f0ff;
+  border-color: var(--primary);
+  transform: scale(1.1);
+}
+
+.sticker-item:active {
+  transform: scale(0.95);
+}
+
+.sticker-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* Sticker Pack Tabs */
+.sticker-pack-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--card-border);
+  background: #fafafa;
+}
+
+.sticker-pack-tab {
+  flex: 1;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.sticker-pack-tab:hover {
+  background: #f3f0ff;
+}
+
+.sticker-pack-tab.active {
+  border-color: var(--primary);
+  background: #ede9fe;
+}
+
+.sticker-pack-tab img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+/* Sticker in Chat Bubble */
+.chat-bubble.sticker-bubble {
+  background: transparent !important;
+  padding: 4px;
+  box-shadow: none;
+}
+
+.chat-sticker-img {
+  width: 130px;
+  height: 130px;
+  object-fit: contain;
+  border-radius: 8px;
 }
 
 /* Post Detail Modal */
@@ -2565,8 +2740,14 @@ body {
   background: var(--primary-gradient);
   animation: pulse 1.2s infinite ease-in-out;
 }
-
+.matches-loading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
 .spinner-anim {
+  text-align: center;
   animation: spin 1s linear infinite;
   font-size: 24px;
   color: var(--primary);
@@ -2866,5 +3047,8 @@ body {
     max-width: 100%;
     height: 100vh;
     border-radius: 0;
+  }
+  .matches-empty-state p {
+    font-size: 15px;
   }
 }

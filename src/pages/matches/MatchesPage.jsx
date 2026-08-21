@@ -10,10 +10,12 @@ import {
   FaCheck,
   FaCheckDouble,
 } from "react-icons/fa";
+import { PiStickerFill } from "react-icons/pi";
 import { api } from "../../services/api";
 import { supabase } from "../../components/supabase/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
+import StickerPicker from "../../components/dating/StickerPicker";
 
 function MatchesPage() {
   const { user } = useAuth();
@@ -26,9 +28,11 @@ function MatchesPage() {
   const [messages, setMessages] = useState([]);
   const [loadingChat, setLoadingChat] = useState(false);
   const [sending, setSending] = useState(false);
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
 
   const messagesEndRef = useRef(null);
   const realtimeChannelRef = useRef(null);
+  const stickerPickerRef = useRef(null);
 
   // 1. Load user's matches
   useEffect(() => {
@@ -142,12 +146,12 @@ function MatchesPage() {
                   m.is_temp &&
                   m.text === newMsg.text &&
                   String(m.sender_id) === String(newMsg.sender_id)
-                )
+                ),
             );
             return [...cleaned, newMsg];
           });
         }
-      }
+      },
     );
 
     channel.subscribe((status) => {
@@ -199,7 +203,7 @@ function MatchesPage() {
 
         // Replace optimistic message with actual DB record
         setMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? savedMsg : m))
+          prev.map((m) => (m.id === tempId ? savedMsg : m)),
         );
 
         // C) Broadcast to partner for instant arrival
@@ -227,19 +231,85 @@ function MatchesPage() {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
+  // Send sticker as a message
+  const handleSendSticker = async (stickerUrl) => {
+    if (!chatUser || !user || sending) return;
+
+    const myId = Number(user.user_id);
+    const partnerId = Number(chatUser.user_id);
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+    const optimisticMessage = {
+      id: tempId,
+      sender_id: myId,
+      receiver_id: partnerId,
+      text: `[sticker]${stickerUrl}`,
+      created_at: new Date().toISOString(),
+      is_temp: true,
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setSending(true);
+
+    try {
+      const res = await api.sendMessage(partnerId, `[sticker]${stickerUrl}`);
+
+      if (res?.message) {
+        const savedMsg = res.message;
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? savedMsg : m)),
+        );
+
+        if (realtimeChannelRef.current) {
+          realtimeChannelRef.current.send({
+            type: "broadcast",
+            event: "new_message",
+            payload: savedMsg,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to send sticker:", err);
+      toast.error("Stiker yuborilmadi");
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Close sticker picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        stickerPickerRef.current &&
+        !stickerPickerRef.current.contains(e.target)
+      ) {
+        setShowStickerPicker(false);
+      }
+    };
+    if (showStickerPicker) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showStickerPicker]);
+
+  // Close sticker picker when chat closes
+  useEffect(() => {
+    if (!chatUser) setShowStickerPicker(false);
+  }, [chatUser]);
+
   return (
     <div className="matches-page-container fade-in-content">
       <div className="matches-header">
         <h2>
-          <FaFire className="fire-icon" /> Matchlarim va Suhbatlar ({matches.length})
+          <FaFire className="fire-icon" /> Matchlarim va Suhbatlar (
+          {matches.length})
         </h2>
-        <p>Bir-biringizga yoqqan insonlar bilan jonli (realtime) suhbatlashing</p>
       </div>
 
       {loading ? (
         <div className="matches-loading">
           <FaSpinner className="spinner-anim" />
-          <p>Matchlar yuklanmoqda...</p>
         </div>
       ) : matches.length === 0 ? (
         <div className="matches-empty-state">
@@ -310,7 +380,9 @@ function MatchesPage() {
                 />
                 <div>
                   <h4>{chatUser.first_name}</h4>
-                  <span className="online-indicator">🟢 Jonli chat (Realtime)</span>
+                  <span className="online-indicator">
+                    🟢 Jonli chat (Realtime)
+                  </span>
                 </div>
               </div>
               <button
@@ -330,7 +402,6 @@ function MatchesPage() {
               {loadingChat ? (
                 <div className="matches-loading" style={{ minHeight: "150px" }}>
                   <FaSpinner className="spinner-anim" />
-                  <p>Xabarlar tarixi yuklanmoqda...</p>
                 </div>
               ) : messages.length === 0 ? (
                 <div className="no-comments" style={{ padding: "30px 10px" }}>
@@ -342,12 +413,24 @@ function MatchesPage() {
                   const isMe =
                     String(msg.sender_id) === String(user?.user_id) ||
                     msg.sender === "me";
+                  const isSticker = msg.text?.startsWith("[sticker]");
+                  const stickerUrl = isSticker
+                    ? msg.text.replace("[sticker]", "")
+                    : null;
                   return (
                     <div
                       key={msg.id}
-                      className={`chat-bubble ${isMe ? "me" : "other"}`}
+                      className={`chat-bubble ${isMe ? "me" : "other"} ${isSticker ? "sticker-bubble" : ""}`}
                     >
-                      <p>{msg.text}</p>
+                      {isSticker ? (
+                        <img
+                          src={stickerUrl}
+                          alt="sticker"
+                          className="chat-sticker-img"
+                        />
+                      ) : (
+                        <p>{msg.text}</p>
+                      )}
                       <span className="chat-time">
                         {formatTime(msg.created_at)}
                         {isMe && (
@@ -363,22 +446,42 @@ function MatchesPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSendMessage} className="chat-input-form">
-              <input
-                type="text"
-                placeholder="Xabaringizni yozing..."
-                value={chatMessage}
-                onChange={(e) => setChatMessage(e.target.value)}
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="chat-send-btn"
-                disabled={sending || !chatMessage.trim()}
-              >
-                <FaPaperPlane />
-              </button>
-            </form>
+            <div className="chat-input-wrapper">
+              {/* Sticker Picker Popup */}
+              {showStickerPicker && (
+                <div className="sticker-picker-popup" ref={stickerPickerRef}>
+                  <StickerPicker
+                    onStickerSelect={handleSendSticker}
+                    onClose={() => setShowStickerPicker(false)}
+                  />
+                </div>
+              )}
+
+              <form onSubmit={handleSendMessage} className="chat-input-form">
+                <button
+                  type="button"
+                  className="sticker-toggle-btn"
+                  onClick={() => setShowStickerPicker((prev) => !prev)}
+                  title="Stikerlar"
+                >
+                  <PiStickerFill />
+                </button>
+                <input
+                  type="text"
+                  placeholder="Xabaringizni yozing..."
+                  value={chatMessage}
+                  onChange={(e) => setChatMessage(e.target.value)}
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="chat-send-btn"
+                  disabled={sending || !chatMessage.trim()}
+                >
+                  <FaPaperPlane />
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}
