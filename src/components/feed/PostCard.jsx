@@ -111,6 +111,9 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
           />
           <div className="post-author-meta">
             <div className="post-author-name-row">
+              {post.author?.profile_sticker && (
+                <img className="post-author-sticker-img" src={post.author.profile_sticker} alt="stiker" />
+              )}
               <span className="post-author-name">
                 {post.author?.first_name || "Foydalanuvchi"}
               </span>
@@ -233,6 +236,9 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
         {post.caption && (
           <p className="post-caption">
             <span className="post-caption-author">
+              {post.author?.profile_sticker && (
+                <img className="post-author-sticker-img" src={post.author.profile_sticker} alt="stiker" />
+              )}
               {post.author?.first_name} :
             </span>{" "}
             {post.caption}

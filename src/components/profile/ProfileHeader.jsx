@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   FaMapMarkerAlt,
   FaEdit,
@@ -6,11 +6,35 @@ import {
   FaTh,
   FaCalendarAlt,
 } from "react-icons/fa";
-import allicon from "/utya-duck-icon/utyaduckicon11.png";
 import fmale from "/gender-icon/fmale/fmale-icon5.jpg";
-import male from "/gender-icon/male/male-icon4.jpg";
+import male from "/gender-icon/male/male-icon3.jpg";
+import StickerPicker from "./StickerPicker";
+import { api } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import toast from "react-hot-toast";
+
 function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
+  const { refreshUser } = useAuth();
+  const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
+
   if (!user) return null;
+
+  const handleStickerSelect = async (sticker) => {
+    try {
+      const formData = new FormData();
+      formData.append("profileSticker", sticker || "");
+      const res = await api.updateProfile(formData);
+      if (res?.success) {
+        await refreshUser();
+        toast.success(
+          sticker ? "Stiker o'rnatildi! ✨" : "Stiker olib tashlandi",
+        );
+      }
+    } catch (err) {
+      console.error("Sticker update error:", err);
+      toast.error("Stikerni saqlashda xatolik");
+    }
+  };
 
   return (
     <div className="profile-header-card">
@@ -38,7 +62,23 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
         <div className="profile-names-section">
           <div className="profile-title-row">
             <div className="profile-full-name">
-              <h1>{user.first_name}</h1> <img src={allicon} alt="" />
+              {/* Profile Sticker Badge - click to open picker */}
+              <h1>{user.first_name}</h1>{" "}
+              <button
+                className="profile-sticker-badge"
+                onClick={() => setIsStickerPickerOpen(true)}
+                title="Stiker o'rnatish / o'zgartirish"
+              >
+                {user.profile_sticker ? (
+                  <img
+                    className="sticker-badge-img"
+                    src={user.profile_sticker}
+                    alt="stiker"
+                  />
+                ) : (
+                  <span className="sticker-placeholder">＋</span>
+                )}
+              </button>
               {user.age && (
                 <span className="profile-age"> ● {user.age} yosh</span>
               )}
@@ -104,6 +144,14 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
           <span>Statistika</span>
         </button>
       </div>
+
+      {/* Sticker Picker Modal */}
+      <StickerPicker
+        isOpen={isStickerPickerOpen}
+        onClose={() => setIsStickerPickerOpen(false)}
+        onSelect={handleStickerSelect}
+        currentSticker={user.profile_sticker}
+      />
     </div>
   );
 }

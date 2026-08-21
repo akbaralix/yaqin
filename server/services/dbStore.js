@@ -170,7 +170,7 @@ export const dbStore = {
       if (commentUserIds.length > 0) {
         const { data: commentAuthors } = await supabase
           .from("users")
-          .select("user_id, first_name, username, profile_pic")
+          .select("user_id, first_name, username, profile_pic, profile_sticker")
           .in("user_id", commentUserIds);
 
         commentAuthorsMap = new Map(
@@ -226,6 +226,7 @@ export const dbStore = {
             first_name: author.first_name,
             username: author.username,
             profile_pic: author.profile_pic,
+            profile_sticker: author.profile_sticker || null,
             gender: author.gender,
             region: author.region,
             age: author.age || this.calculateAge(author.birth_date),
@@ -377,6 +378,7 @@ export const dbStore = {
               first_name: author.first_name,
               username: author.username,
               profile_pic: author.profile_pic,
+              profile_sticker: author.profile_sticker || null,
               gender: author.gender,
               region: author.region,
               age: author.age || this.calculateAge(author.birth_date),
@@ -474,6 +476,7 @@ export const dbStore = {
         author_name: author?.first_name || "Foydalanuvchi",
         author_pic: author?.profile_pic || null,
         author_username: author?.username || null,
+        author_sticker: author?.profile_sticker || null,
       };
     } catch (err) {
       console.error("addComment exception:", err);
@@ -494,7 +497,7 @@ export const dbStore = {
       const userIds = [...new Set(comments.map((c) => Number(c.user_id)))];
       const { data: authors } = await supabase
         .from("users")
-        .select("user_id, first_name, username, profile_pic")
+        .select("user_id, first_name, username, profile_pic, profile_sticker")
         .in("user_id", userIds);
 
       const authorsMap = new Map(
@@ -510,6 +513,7 @@ export const dbStore = {
           author_name: author.first_name,
           author_pic: author.profile_pic,
           author_username: author.username,
+          author_sticker: author.profile_sticker || null,
         };
       });
     } catch (err) {

@@ -30,6 +30,7 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS region TEXT;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS age INT;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS interests JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_profile_complete BOOLEAN DEFAULT false;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS profile_sticker TEXT DEFAULT NULL;
 
 -- 2. TELEGRAM AUTH SESSIONS TABLE
 CREATE TABLE IF NOT EXISTS public.telegram_auth_sessions (

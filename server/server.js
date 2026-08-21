@@ -44,13 +44,15 @@ const handleMultipartSingle = (fieldName) => (req, res, next) => {
   next();
 };
 
-const handleMultipartArray = (fieldName, maxCount = 10) => (req, res, next) => {
-  const ct = req.headers["content-type"] || "";
-  if (ct.includes("multipart/form-data")) {
-    return upload.array(fieldName, maxCount)(req, res, next);
-  }
-  next();
-};
+const handleMultipartArray =
+  (fieldName, maxCount = 10) =>
+  (req, res, next) => {
+    const ct = req.headers["content-type"] || "";
+    if (ct.includes("multipart/form-data")) {
+      return upload.array(fieldName, maxCount)(req, res, next);
+    }
+    next();
+  };
 
 // Helper to upload file buffer to Supabase Storage "rasmlar" bucket
 async function uploadToSupabase(file, folder = "uploads") {
@@ -97,7 +99,8 @@ app.get("/", (req, res, next) => {
   if (!isHtml || !fs.existsSync(distPath)) {
     return res.json({
       status: "ok",
-      message: "Yaqin Dating & Social Network API muvaffaqiyatli ishlayapti! 🚀",
+      message:
+        "Yaqin Dating & Social Network API muvaffaqiyatli ishlayapti! 🚀",
       version: "2.0.0",
     });
   }
@@ -116,7 +119,15 @@ app.post(
   async (req, res) => {
     try {
       const userId = req.user.user_id;
-      const { firstName, birthDate, region, gender, interests, bio } = req.body;
+      const {
+        firstName,
+        birthDate,
+        region,
+        gender,
+        interests,
+        bio,
+        profileSticker,
+      } = req.body;
 
       if (!firstName || !region || !gender) {
         return res
@@ -151,6 +162,7 @@ app.post(
         interests: parsedInterests,
         bio: bio ? bio.trim() : "",
         is_profile_complete: true,
+        profile_sticker: profileSticker || null,
       };
 
       if (profilePicUrl) {
@@ -169,7 +181,7 @@ app.post(
           is_profile_complete: true,
         },
         JWT_SECRET,
-        { expiresIn: "30d" }
+        { expiresIn: "30d" },
       );
 
       return res.json({
@@ -185,7 +197,7 @@ app.post(
         .status(500)
         .json({ error: "Profilni saqlashda kutilmagan xatolik yuz berdi" });
     }
-  }
+  },
 );
 
 // --- 4. CURRENT USER INFO & PROFILE MANAGEMENT ---
@@ -200,11 +212,11 @@ app.get("/api/user/me", authenticateToken, async (req, res) => {
 
     const isComplete = Boolean(
       user.is_profile_complete === true ||
-        user.is_profile_complete === "true" ||
-        (user.gender &&
-          user.region &&
-          (user.birth_date || user.age) &&
-          (user.first_name || user.name))
+      user.is_profile_complete === "true" ||
+      (user.gender &&
+        user.region &&
+        (user.birth_date || user.age) &&
+        (user.first_name || user.name)),
     );
 
     const analytics = await dbStore.getUserAnalytics(userId);
@@ -224,7 +236,9 @@ app.get("/api/user/me", authenticateToken, async (req, res) => {
     });
   } catch (err) {
     console.error("Get /me error:", err);
-    return res.status(500).json({ error: "Foydalanuvchi ma'lumotlarini olishda xatolik" });
+    return res
+      .status(500)
+      .json({ error: "Foydalanuvchi ma'lumotlarini olishda xatolik" });
   }
 });
 
@@ -236,7 +250,15 @@ app.put(
   async (req, res) => {
     try {
       const userId = req.user.user_id;
-      const { firstName, bio, birthDate, region, gender, interests } = req.body;
+      const {
+        firstName,
+        bio,
+        birthDate,
+        region,
+        gender,
+        interests,
+        profileSticker,
+      } = req.body;
 
       let profilePicUrl = null;
       if (req.file) {
@@ -269,6 +291,9 @@ app.put(
       if (profilePicUrl) {
         updatePayload.profile_pic = profilePicUrl;
       }
+      if (profileSticker !== undefined) {
+        updatePayload.profile_sticker = profileSticker || null;
+      }
 
       const updatedUser = await dbStore.upsertUser(updatePayload);
 
@@ -281,7 +306,7 @@ app.put(
       console.error("Edit profile error:", err);
       return res.status(500).json({ error: "Profilni yangilashda xatolik" });
     }
-  }
+  },
 );
 
 // User Profile Analytics (Requirement 5: Profil Analitikasi)
@@ -295,7 +320,9 @@ app.get("/api/user/analytics/stats", authenticateToken, async (req, res) => {
     });
   } catch (err) {
     console.error("Analytics error:", err);
-    return res.status(500).json({ error: "Analitika ma'lumotlarini olishda xatolik" });
+    return res
+      .status(500)
+      .json({ error: "Analitika ma'lumotlarini olishda xatolik" });
   }
 });
 
@@ -332,7 +359,8 @@ app.get("/api/user/:userId", optionalAuth, async (req, res) => {
 // Feed with filters and Smart Recommendation
 app.get("/api/posts", optionalAuth, async (req, res) => {
   try {
-    const { region, gender, ageMin, ageMax, interest, search, userId } = req.query;
+    const { region, gender, ageMin, ageMax, interest, search, userId } =
+      req.query;
     const currentUserId = req.user?.user_id;
 
     const posts = await dbStore.getPosts({
@@ -416,9 +444,11 @@ app.post(
       });
     } catch (err) {
       console.error("Create post error:", err);
-      return res.status(500).json({ error: "Post yaratishda xatolik yuz berdi" });
+      return res
+        .status(500)
+        .json({ error: "Post yaratishda xatolik yuz berdi" });
     }
-  }
+  },
 );
 
 // Toggle Like on Post (Requirement 3: Interaktivlik - Like toggle)
@@ -435,7 +465,9 @@ app.post("/api/posts/:postId/like", authenticateToken, async (req, res) => {
     });
   } catch (err) {
     console.error("Post like toggle error:", err);
-    return res.status(500).json({ error: "Like holatini o'zgartirib bo'lmadi" });
+    return res
+      .status(500)
+      .json({ error: "Like holatini o'zgartirib bo'lmadi" });
   }
 });
 
@@ -499,7 +531,9 @@ app.get("/api/dating/cards", authenticateToken, async (req, res) => {
     });
   } catch (err) {
     console.error("Get dating cards error:", err);
-    return res.status(500).json({ error: "Tanishuv profillarini yuklashda xatolik" });
+    return res
+      .status(500)
+      .json({ error: "Tanishuv profillarini yuklashda xatolik" });
   }
 });
 
@@ -564,7 +598,9 @@ app.post("/api/messages/:partnerId", authenticateToken, async (req, res) => {
     const { text } = req.body;
 
     if (!text || !text.trim()) {
-      return res.status(400).json({ error: "Xabar matni bo'sh bo'lishi mumkin emas" });
+      return res
+        .status(400)
+        .json({ error: "Xabar matni bo'sh bo'lishi mumkin emas" });
     }
 
     const message = await dbStore.sendMessage(currentUserId, partnerId, text);
@@ -578,7 +614,6 @@ app.post("/api/messages/:partnerId", authenticateToken, async (req, res) => {
     return res.status(500).json({ error: "Xabar yuborishda xatolik" });
   }
 });
-
 
 // Serve static frontend assets and SPA routes if dist folder exists
 if (fs.existsSync(distPath)) {

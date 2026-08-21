@@ -95,7 +95,12 @@ function CommentsModal({ isOpen, post, onClose, onCommentAdded }) {
               className="comment-user-avatar"
             />
             <div className="comment-bubble post-author-bubble">
-              <span className="comment-author-name">{post.author?.first_name}</span>
+              <span className="comment-author-name">
+                {post.author?.profile_sticker && (
+                  <img className="comment-author-sticker-img" src={post.author.profile_sticker} alt="stiker" />
+                )}
+                {post.author?.first_name}
+              </span>
               <p className="comment-text">{post.caption}</p>
             </div>
           </div>
@@ -123,7 +128,12 @@ function CommentsModal({ isOpen, post, onClose, onCommentAdded }) {
                 />
                 <div className="comment-content">
                   <div className="comment-bubble">
-                    <span className="comment-author-name">{c.author_name}</span>
+                    <span className="comment-author-name">
+                      {c.author_sticker && (
+                        <img className="comment-author-sticker-img" src={c.author_sticker} alt="stiker" />
+                      )}
+                      {c.author_name}
+                    </span>
                     <p className="comment-text">{c.text}</p>
                   </div>
                   <span className="comment-time">{formatTime(c.created_at)}</span>
