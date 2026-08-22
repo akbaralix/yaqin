@@ -51,7 +51,7 @@ const interestsList = [
   { id: "gaming", name: "O'yinlar (Gaming)", icon: <FaGamepad /> },
   { id: "movies", name: "Kino & Seriallar", icon: <FaFilm /> },
   { id: "photo", name: "Suratga olish", icon: <FaCamera /> },
-  { id: "chees", name: "Shaxmat o'ynash", icon: <FaChess /> },
+  { id: "chess", name: "Shaxmat o'ynash", icon: <FaChess /> },
   { id: "cooking", name: "Kulinariya", icon: <FaUtensils /> },
   { id: "art", name: "Rasm chizish / San'at", icon: <FaPalette /> },
 ];
@@ -159,7 +159,7 @@ function CompleteProfile() {
       toast.error("Iltimos, jinsingizni tanlang!");
       return;
     }
-    if (selectedInterests.length === 2) {
+    if (selectedInterests.length < 3) {
       toast.error("Kamida 3 ta qiziqishni tanlang!");
       return;
     }
@@ -182,7 +182,6 @@ function CompleteProfile() {
       const result = await api.completeProfile(dataToSend);
 
       if (result.success && result.token) {
-        // Update auth context and localStorage with new JWT token containing is_profile_complete: true
         loginWithToken(result.token, result.user);
         toast.success("Profil muvaffaqiyatli to'ldirildi! Xush kelibsiz 🎉");
 
@@ -329,14 +328,16 @@ function CompleteProfile() {
                 className={`gender-btn ${formData.gender === "male" ? "active" : ""}`}
                 onClick={() => handleGenderSelect("male")}
               >
-                Erkak
+                <img src="/gender-icon/male/male-icon.jpg" alt="" />
+                <span>Erkak</span>
               </button>
               <button
                 type="button"
                 className={`gender-btn ${formData.gender === "female" ? "active" : ""}`}
                 onClick={() => handleGenderSelect("female")}
               >
-                Ayol
+                <img src="/gender-icon/fmale/female-icon.jpg" alt="" />
+                <span> Ayol</span>
               </button>
             </div>
           </div>
@@ -355,10 +356,7 @@ function CompleteProfile() {
 
           <div className="form-group">
             <div className="interests-wrapper">
-              <label>
-                Qiziqishlaringizni tanlang * ({selectedInterests.length} ta
-                tanlandi)
-              </label>
+              <label>Qiziqishlaringizni tanlang (kamida 3 ta )</label>
               <div className="interests-grid">
                 {interestsList.map((item) => {
                   const isSelected = selectedInterests.includes(item.name);
@@ -387,7 +385,11 @@ function CompleteProfile() {
               <IoArrowBackOutline />
             </button>
 
-            <button type="submit" className="submit-btn" disabled={loading}>
+            <button
+              type="submit"
+              className="submit-btn"
+              disabled={loading || selectedInterests.length < 3}
+            >
               {loading ? "Saqlanmoqda..." : "Saqlash va Boshlash 🚀"}
             </button>
           </div>

@@ -3,6 +3,14 @@ import { FaTimes } from "react-icons/fa";
 
 const STICKER_PACKS = [
   {
+    name: "Utya Duck",
+    icon: "/utya-duck-icon/utyaduckicon1.png",
+    stickers: Array.from({ length: 12 }, (_, i) => ({
+      id: `utya${i + 1}`,
+      src: `/utya-duck-icon/utyaduckicon${i + 1}.png`,
+    })),
+  },
+  {
     name: "Stikerlar",
     icon: "/stickers/sticker1.jpg",
     stickers: Array.from({ length: 12 }, (_, i) => ({
@@ -21,14 +29,7 @@ const STICKER_PACKS = [
       })),
     ],
   },
-  {
-    name: "Utya Duck",
-    icon: "/utya-duck-icon/utyaduckicon1.png",
-    stickers: Array.from({ length: 12 }, (_, i) => ({
-      id: `utya${i + 1}`,
-      src: `/utya-duck-icon/utyaduckicon${i + 1}.png`,
-    })),
-  },
+
   {
     name: "Emojies",
     icon: "/emojies/emojies1.jpg",

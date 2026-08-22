@@ -281,7 +281,8 @@ function Login() {
           <h2>Telegram orqali kirish</h2>
           <p>
             Pastdagi tugmani bosganingizda <b>@Yaqinauth</b> botiga o'tasiz va u
-            yerda "✅ Kirish" tugmasi orqali hisobingizni tasdiqlaysiz.
+            yerda <b style={{ color: "#53fc7d" }}>"✅ Kirish"</b> tugmasi orqali
+            hisobingizni tasdiqlaysiz.
           </p>
 
           {statusMessage && <p className="status-message">{statusMessage}</p>}
