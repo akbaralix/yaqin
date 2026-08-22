@@ -91,6 +91,7 @@ if (bot) {
 
       await ctx.editMessageText(
         "✅ Tasdiqlandi! Brauzerga qaytib davom etishingiz mumkin.",
+        Markup.button.url("💜 Saytga qaytish", "https://yaqin-uz.web.app"),
       );
     } catch (err) {
       console.error("Confirm error:", err);
