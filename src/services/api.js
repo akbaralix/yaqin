@@ -2,8 +2,8 @@ const API_BASE_URL =
   import.meta.env.VITE_SERVER_URL !== undefined
     ? import.meta.env.VITE_SERVER_URL
     : import.meta.env.PROD
-    ? ""
-    : "http://localhost:5001";
+      ? ""
+      : "http://localhost:5001";
 
 /**
  * Generic Fetch API client with automatic Bearer token injection
@@ -38,7 +38,10 @@ async function request(endpoint, options = {}) {
 
     return data;
   } catch (err) {
-    console.error(`API Error on [${options.method || "GET"} ${endpoint}]:`, err.message);
+    console.error(
+      `API Error on [${options.method || "GET"} ${endpoint}]:`,
+      err.message,
+    );
     throw err;
   }
 }
@@ -108,10 +111,16 @@ export const api = {
     }),
 
   // Dating / Swipe
+  // Dating / Swipe
   getDatingCards: (params = {}) => {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== "" && v !== "all") {
+      // gender "all" bo'lsa ham query'ga qo'shiladi (?gender=all bo'lib ketadi)
+      if (v !== undefined && v !== null && v !== "") {
+        if (k === "region" && v === "all") {
+          // region "all" bo'lsa yubormasa ham bo'laveradi
+          return;
+        }
         query.append(k, v);
       }
     });
@@ -134,5 +143,10 @@ export const api = {
     request(`/api/messages/${partnerId}`, {
       method: "POST",
       body: JSON.stringify({ text }),
+    }),
+
+  deleteMatch: (matchId) =>
+    request(`/api/dating/matches/${matchId}`, {
+      method: "DELETE",
     }),
 };

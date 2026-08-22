@@ -6,13 +6,19 @@ const token = process.env.BOT_TOKEN;
 export const bot = token ? new Telegraf(token) : null;
 
 if (bot) {
+  // Global xatolik ushlash (Bot crash bo'lishini oldini oladi)
+  bot.catch((err, ctx) => {
+    if (err.description?.includes("query is too old")) return;
+    console.error(`Bot xatoligi (${ctx.updateType}):`, err);
+  });
+
   // 1. Foydalanuvchi /start <OTP> orqali kelganda
   bot.start(async (ctx) => {
     const otpCode = String(ctx.payload).trim();
 
     if (!otpCode) {
       return ctx.reply(
-        "Xush kelibsiz! Yaqin saytiga kirish uchun saytdagi havola orqali kiring."
+        "Xush kelibsiz! Yaqin saytiga kirish uchun saytdagi havola orqali kiring.",
       );
     }
 
@@ -36,7 +42,7 @@ if (bot) {
             Markup.button.callback("✅ Kirish", `confirm_${otpCode}`),
             Markup.button.callback("❌ Kirmaslik", `cancel_${otpCode}`),
           ],
-        ])
+        ]),
       );
     } catch (err) {
       console.error("Start catch xatolik:", err);
@@ -46,6 +52,9 @@ if (bot) {
 
   // 2. Foydalanuvchi "✅ Kirish" tugmasini bosganda
   bot.action(/^confirm_(.+)$/, async (ctx) => {
+    // 1. Telegram'ga tugma bosilganini DILHOD bildiramiz
+    await ctx.answerCbQuery().catch(() => {});
+
     const rawOtp = ctx.match[1].trim();
 
     try {
@@ -57,7 +66,6 @@ if (bot) {
         .maybeSingle();
 
       if (!session) {
-        await ctx.answerCbQuery();
         return ctx.editMessageText("❌ Sessiya eskirgan yoki topilmadi.");
       }
 
@@ -70,7 +78,7 @@ if (bot) {
             first_name: ctx.from.first_name,
             username: ctx.from.username || null,
           },
-          { onConflict: "user_id" }
+          { onConflict: "user_id" },
         )
         .select()
         .single();
@@ -81,15 +89,22 @@ if (bot) {
         .update({ status: "verified", telegram_id: ctx.from.id })
         .eq("id", session.id);
 
-      await ctx.answerCbQuery();
-      await ctx.editMessageText("✅ Tasdiqlandi! Brauzerga qaytib davom etishingiz mumkin.");
+      await ctx.editMessageText(
+        "✅ Tasdiqlandi! Brauzerga qaytib davom etishingiz mumkin.",
+      );
     } catch (err) {
       console.error("Confirm error:", err);
+      await ctx
+        .editMessageText("❌ Kirishni tasdiqlashda xatolik yuz berdi.")
+        .catch(() => {});
     }
   });
 
   // 3. Foydalanuvchi "❌ Kirmaslik" tugmasini bosganda
   bot.action(/^cancel_(.+)$/, async (ctx) => {
+    // 1. Telegram'ga tugma bosilganini DARHOL bildiramiz
+    await ctx.answerCbQuery().catch(() => {});
+
     const otpCode = String(ctx.match[1]).trim();
 
     try {
@@ -98,18 +113,21 @@ if (bot) {
         .update({ status: "cancelled" })
         .eq("otp_code", otpCode);
 
-      await ctx.answerCbQuery();
       await ctx.editMessageText("🚫 Kirish rad etildi.");
     } catch (err) {
       console.error("Cancel catch xatolik:", err);
-      ctx.answerCbQuery("Xatolik yuz berdi.");
+      await ctx
+        .editMessageText("❌ Amalni bekor qilishda xatolik yuz berdi.")
+        .catch(() => {});
     }
   });
 }
 
 export const startBot = () => {
   if (!bot) {
-    console.log("ℹ️ Telegram BOT_TOKEN o'rnatilmagan. Bot ishga tushirilmadi (REST API ishlayveradi).");
+    console.log(
+      "ℹ️ Telegram BOT_TOKEN o'rnatilmagan. Bot ishga tushirilmadi (REST API ishlayveradi).",
+    );
     return;
   }
 

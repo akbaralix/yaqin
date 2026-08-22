@@ -10,17 +10,20 @@ import {
   FaCheck,
   FaCheckDouble,
 } from "react-icons/fa";
+import { MdOutlineDelete } from "react-icons/md";
+
 import { PiStickerFill } from "react-icons/pi";
 import { api } from "../../services/api";
 import { supabase } from "../../components/supabase/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
+import { useDataCache } from "../../context/DataCacheContext";
 import toast from "react-hot-toast";
 import StickerPicker from "../../components/dating/StickerPicker";
 
 function MatchesPage() {
   const { user } = useAuth();
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { matches, matchesLoading, loadMatches, removeMatchLocally } =
+    useDataCache();
 
   // Active chat state
   const [chatUser, setChatUser] = useState(null);
@@ -30,27 +33,19 @@ function MatchesPage() {
   const [sending, setSending] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
 
+  // Delete modal state
+  const [openDelete, setOpenDelete] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState(null); // O'chiriladigan match saqlanadi
+  const [deleting, setDeleting] = useState(false);
+
   const messagesEndRef = useRef(null);
   const realtimeChannelRef = useRef(null);
   const stickerPickerRef = useRef(null);
 
-  // 1. Load user's matches
+  // 1. Load user's matches (kesh bo'lsa yuklamaydi)
   useEffect(() => {
-    async function loadMatches() {
-      try {
-        const res = await api.getMatches();
-        if (res?.matches) {
-          setMatches(res.matches);
-        }
-      } catch (err) {
-        console.warn("Matches load error:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadMatches();
-  }, []);
+  }, [loadMatches]);
 
   // 2. Auto-scroll chat to the bottom
   const scrollToBottom = (behavior = "smooth") => {
@@ -70,7 +65,6 @@ function MatchesPage() {
     setLoadingChat(true);
 
     try {
-      // Load historical messages from DB
       const res = await api.getChatMessages(matchedUser.user_id);
       if (res?.messages) {
         setMessages(res.messages);
@@ -84,17 +78,42 @@ function MatchesPage() {
     }
   };
 
-  // 4. Realtime subscription via Supabase Channel (Postgres changes + Broadcast)
+  // Match/Chatni o'chirish funksiyasi
+  const handleDeleteChat = async () => {
+    if (!selectedMatch) return;
+    setDeleting(true);
+    try {
+      await api.deleteMatch(selectedMatch.match_id);
+
+      removeMatchLocally(selectedMatch.match_id);
+
+      if (
+        chatUser &&
+        String(chatUser.user_id) === String(selectedMatch.user.user_id)
+      ) {
+        setChatUser(null);
+      }
+
+      toast.success("Match va chat o'chirildi");
+      setOpenDelete(false);
+      setSelectedMatch(null);
+    } catch (err) {
+      console.error("Delete match error:", err);
+      toast.error("O'chirishda xatolik yuz berdi");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // 4. Realtime subscription via Supabase Channel
   useEffect(() => {
     if (!chatUser || !user) return;
 
     const myId = Number(user.user_id);
     const partnerId = Number(chatUser.user_id);
 
-    // Unique deterministic channel room name between these 2 users
     const roomName = `chat_${Math.min(myId, partnerId)}_${Math.max(myId, partnerId)}`;
 
-    // Clean up previous channel if any
     if (realtimeChannelRef.current) {
       supabase.removeChannel(realtimeChannelRef.current);
     }
@@ -106,7 +125,6 @@ function MatchesPage() {
       },
     });
 
-    // A) Fast Broadcast Listener for instant peer delivery (<10ms)
     channel.on("broadcast", { event: "new_message" }, ({ payload }) => {
       if (payload && String(payload.sender_id) === String(partnerId)) {
         setMessages((prev) => {
@@ -116,7 +134,6 @@ function MatchesPage() {
       }
     });
 
-    // B) Database Change Listener (Postgres changes)
     channel.on(
       "postgres_changes",
       {
@@ -136,10 +153,8 @@ function MatchesPage() {
 
         if (isBetweenUs) {
           setMessages((prev) => {
-            // If message already exists by id, skip
             if (prev.some((m) => m.id === newMsg.id)) return prev;
 
-            // Remove matching optimistic message if any
             const cleaned = prev.filter(
               (m) =>
                 !(
@@ -154,11 +169,7 @@ function MatchesPage() {
       },
     );
 
-    channel.subscribe((status) => {
-      if (status === "SUBSCRIBED") {
-        console.log(`🟢 Realtime chat connected to room: ${roomName}`);
-      }
-    });
+    channel.subscribe();
 
     realtimeChannelRef.current = channel;
 
@@ -170,7 +181,7 @@ function MatchesPage() {
     };
   }, [chatUser, user]);
 
-  // 5. Send message with instant optimistic UI + DB persistence + Realtime Broadcast
+  // 5. Send message
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatMessage.trim() || !chatUser || !user || sending) return;
@@ -180,7 +191,6 @@ function MatchesPage() {
     const partnerId = Number(chatUser.user_id);
     const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
-    // A) Instant Optimistic Update
     const optimisticMessage = {
       id: tempId,
       sender_id: myId,
@@ -195,18 +205,14 @@ function MatchesPage() {
     setSending(true);
 
     try {
-      // B) Persist to Supabase Database via API
       const res = await api.sendMessage(partnerId, textToSend);
 
       if (res?.message) {
         const savedMsg = res.message;
-
-        // Replace optimistic message with actual DB record
         setMessages((prev) =>
           prev.map((m) => (m.id === tempId ? savedMsg : m)),
         );
 
-        // C) Broadcast to partner for instant arrival
         if (realtimeChannelRef.current) {
           realtimeChannelRef.current.send({
             type: "broadcast",
@@ -218,7 +224,6 @@ function MatchesPage() {
     } catch (err) {
       console.error("Failed to send message:", err);
       toast.error("Xabar yuborilmadi");
-      // Remove temporary message on failure
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
     } finally {
       setSending(false);
@@ -231,7 +236,6 @@ function MatchesPage() {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  // Send sticker as a message
   const handleSendSticker = async (stickerUrl) => {
     if (!chatUser || !user || sending) return;
 
@@ -277,7 +281,6 @@ function MatchesPage() {
     }
   };
 
-  // Close sticker picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -293,7 +296,6 @@ function MatchesPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showStickerPicker]);
 
-  // Close sticker picker when chat closes
   useEffect(() => {
     if (!chatUser) setShowStickerPicker(false);
   }, [chatUser]);
@@ -307,7 +309,7 @@ function MatchesPage() {
         </h2>
       </div>
 
-      {loading ? (
+      {matchesLoading ? (
         <div className="matches-loading">
           <FaSpinner className="spinner-anim" />
         </div>
@@ -329,6 +331,16 @@ function MatchesPage() {
         <div className="matches-grid">
           {matches.map((m) => (
             <div key={m.match_id} className="match-card">
+              <button
+                className="open-delete-modal"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedMatch(m);
+                  setOpenDelete(true);
+                }}
+              >
+                <MdOutlineDelete />
+              </button>
               <img
                 src={
                   m.user.profile_pic ||
@@ -359,6 +371,33 @@ function MatchesPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {openDelete && (
+        <div className="modal-overlay">
+          <div className="delete-chat-modal">
+            <h2>Ushbu chatni rostan ham o'chirmoqchimisiz?</h2>
+
+            <div className="delete-chat-buton">
+              <button
+                onClick={handleDeleteChat}
+                disabled={deleting}
+                style={{ color: "red" }}
+              >
+                {deleting ? "O'chirilmoqda..." : "O'chirish"}
+              </button>
+              <button
+                onClick={() => {
+                  setOpenDelete(false);
+                  setSelectedMatch(null);
+                }}
+              >
+                Bekor qilish
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -447,7 +486,6 @@ function MatchesPage() {
             </div>
 
             <div className="chat-input-wrapper">
-              {/* Sticker Picker Popup */}
               {showStickerPicker && (
                 <div className="sticker-picker-popup" ref={stickerPickerRef}>
                   <StickerPicker

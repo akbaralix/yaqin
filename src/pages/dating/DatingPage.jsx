@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import SwipeCard from "../../components/dating/SwipeCard";
 import MatchModal from "../../components/dating/MatchModal";
 import { api } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { useDataCache } from "../../context/DataCacheContext";
 import toast from "react-hot-toast";
 import {
   FaFire,
@@ -32,32 +33,38 @@ const viloyatlar = [
 
 function DatingPage() {
   const { user } = useAuth();
-  const [candidates, setCandidates] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    candidates,
+    datingLoading,
+    datingFilters,
+    loadCandidates,
+    initDatingFilters,
+    updateDatingFilters,
+    removeCandidateLocally,
+  } = useDataCache();
+
   const [activeMatchUser, setActiveMatchUser] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  const [filters, setFilters] = useState({
-    region: "all",
-    ageMin: "",
-    ageMax: "",
-  });
+  // Default jinsni foydalanuvchining qarama-qarshi jinsiga sozlaymiz
+  const defaultGender =
+    user?.gender === "male"
+      ? "female"
+      : user?.gender === "female"
+        ? "male"
+        : "all";
 
-  const loadCandidates = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.getDatingCards(filters);
-      if (res?.candidates) {
-        setCandidates(res.candidates);
-      }
-    } catch (err) {
-      console.warn("Failed to load candidates:", err);
-      toast.error("Tanishuv profillarini yuklashda xatolik");
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  // Filtrlarni birinchi marta initialize qilamiz
+  useEffect(() => {
+    initDatingFilters({
+      gender: defaultGender,
+      region: "all",
+      ageMin: "",
+      ageMax: "",
+    });
+  }, [initDatingFilters, defaultGender]);
 
+  // Kesh bo'lsa yuklamaydi, yo'q bo'lsa yuklaydi
   useEffect(() => {
     loadCandidates();
   }, [loadCandidates]);
@@ -66,7 +73,7 @@ function DatingPage() {
     const candidate = candidates.find((c) => c.user_id === targetId);
 
     // Remove candidate from local stack immediately
-    setCandidates((prev) => prev.filter((c) => c.user_id !== targetId));
+    removeCandidateLocally(targetId);
 
     try {
       const res = await api.swipeCandidate(targetId, action);
@@ -81,10 +88,18 @@ function DatingPage() {
     }
   };
 
+  // Filtrlarni lokal boshqarish — context'ga yozish
+  const filters = datingFilters || {
+    gender: defaultGender,
+    region: "all",
+    ageMin: "",
+    ageMax: "",
+  };
+
   const targetGenderText =
-    user?.gender === "male"
+    filters.gender === "female"
       ? "Ayollar profillari"
-      : user?.gender === "female"
+      : filters.gender === "male"
         ? "Erkaklar profillari"
         : "Barcha profillar";
 
@@ -112,12 +127,28 @@ function DatingPage() {
       {showFilters && (
         <div className="dating-filters-box fade-in-content">
           <div className="filter-row">
+            {/* Jins bo'yicha filtr */}
+            <div className="filter-item">
+              <label>Jins:</label>
+              <select
+                value={filters.gender}
+                onChange={(e) =>
+                  updateDatingFilters({ gender: e.target.value })
+                }
+              >
+                <option value="all">Barchasi</option>
+                <option value="female">Ayollar</option>
+                <option value="male">Erkaklar</option>
+              </select>
+            </div>
+
+            {/* Viloyat bo'yicha filtr */}
             <div className="filter-item">
               <label>Viloyat:</label>
               <select
                 value={filters.region}
                 onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, region: e.target.value }))
+                  updateDatingFilters({ region: e.target.value })
                 }
               >
                 <option value="all">Barcha viloyatlar</option>
@@ -129,6 +160,7 @@ function DatingPage() {
               </select>
             </div>
 
+            {/* Yosh oralig'i */}
             <div className="filter-item">
               <label>Yosh oralig'i:</label>
               <div className="age-inputs-row">
@@ -137,7 +169,7 @@ function DatingPage() {
                   placeholder="Min"
                   value={filters.ageMin}
                   onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, ageMin: e.target.value }))
+                    updateDatingFilters({ ageMin: e.target.value })
                   }
                 />
                 <span>-</span>
@@ -146,7 +178,7 @@ function DatingPage() {
                   placeholder="Maks"
                   value={filters.ageMax}
                   onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, ageMax: e.target.value }))
+                    updateDatingFilters({ ageMax: e.target.value })
                   }
                 />
               </div>
@@ -157,7 +189,7 @@ function DatingPage() {
 
       {/* Dating Cards Stack */}
       <div className="dating-cards-stage">
-        {loading ? (
+        {datingLoading ? (
           <div className="dating-loading-state">
             <FaSpinner className="spinner-anim" />
             <p>Sizga mos yangi profillar izlanmoqda...</p>
@@ -165,14 +197,14 @@ function DatingPage() {
         ) : candidates.length === 0 ? (
           <div className="dating-empty-card fade-in-content">
             <div className="empty-fire-circle">
-              <img src="/utya-duck-icon/utyaduckicon12.png" alt="" />{" "}
+              <img src="/utya-duck-icon/utyaduckicon12.png" alt="" />
             </div>
             <h3>Hozircha yangi nomzodlar qolmadi</h3>
             <p>
               Siz mavjud barcha tavsiya etilgan profillarni ko'rib chiqdingiz.
               Filtrlarni o'zgartirib ko'ring yoki keyinroq qayta kiring!
             </p>
-            <button className="reload-candidates-btn" onClick={loadCandidates}>
+            <button className="reload-candidates-btn" onClick={() => loadCandidates(true)}>
               <FaRedo /> Qaytadan tekshirish
             </button>
           </div>

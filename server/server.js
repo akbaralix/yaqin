@@ -516,14 +516,14 @@ app.post("/api/posts/:postId/comments", authenticateToken, async (req, res) => {
 app.get("/api/dating/cards", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.user_id;
-    const { region, ageMin, ageMax } = req.query;
+    const { region, ageMin, ageMax, gender } = req.query;
 
     const candidates = await dbStore.getDatingCandidates(userId, {
       region,
       ageMin,
       ageMax,
+      gender,
     });
-
     return res.json({
       success: true,
       candidates,
@@ -571,6 +571,71 @@ app.get("/api/dating/matches", authenticateToken, async (req, res) => {
     return res.status(500).json({ error: "Matchlarni yuklashda xatolik" });
   }
 });
+
+// DELETE /api/dating/matches/:matchId
+app.delete(
+  "/api/dating/matches/:matchId",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { matchId } = req.params;
+      const currentUserId = Number(req.user.user_id);
+
+      // 1. Match yozuvini ID bo'yicha topamiz
+      const { data: matchRow, error: matchError } = await supabase
+        .from("matches")
+        .select("*")
+        .eq("id", matchId)
+        .maybeSingle();
+
+      if (matchError) {
+        console.warn("Find match error:", matchError.message);
+      }
+
+      if (!matchRow) {
+        return res.status(404).json({ error: "Match topilmadi" });
+      }
+
+      // 2. Sherik ID sini aniqlaymiz
+      const partnerId =
+        Number(matchRow.user1_id) === currentUserId
+          ? Number(matchRow.user2_id)
+          : Number(matchRow.user1_id);
+
+      // 3. Bazaning BARCHA jadvallaridan ikkala tomon uchun tozalaymiz
+      await Promise.allSettled([
+        // matches jadvalidan o'chirish
+        supabase.from("matches").delete().eq("id", matchId),
+
+        // dating_swipes — ikkala tomondan o'chirish (qayta match bo'lmasligi uchun)
+        supabase
+          .from("dating_swipes")
+          .delete()
+          .or(
+            `and(sender_id.eq.${currentUserId},target_id.eq.${partnerId}),and(sender_id.eq.${partnerId},target_id.eq.${currentUserId})`,
+          ),
+
+        // messages — ikkala tomonning xabarlari o'chiriladi
+        supabase
+          .from("messages")
+          .delete()
+          .or(
+            `and(sender_id.eq.${currentUserId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${currentUserId})`,
+          ),
+      ]);
+
+      return res.json({
+        success: true,
+        message: "Match va barcha bog'liq ma'lumotlar ikki tomon uchun o'chirildi",
+      });
+    } catch (err) {
+      console.error("Delete match error:", err);
+      return res
+        .status(500)
+        .json({ error: "Matchni o'chirishda xatolik yuz berdi" });
+    }
+  },
+);
 
 // --- 7. REALTIME CHAT MESSAGES ---
 app.get("/api/messages/:partnerId", authenticateToken, async (req, res) => {

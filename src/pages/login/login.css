@@ -53,11 +53,12 @@
 }
 
 .login-card button {
-  padding: 15px;
+  padding: 12px;
   border-radius: var(--btn-border-radius);
   background-color: var(--btn-bg);
   color: white;
   font-size: 18px;
+  font-family: "poppins";
   border: none;
   cursor: pointer;
   display: flex;
@@ -266,12 +267,13 @@
 
 .submit-btn {
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   background-color: var(--btn-bg);
   color: #ffffff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--btn-border-radius);
   font-size: 16px;
+  font-family: "poppins";
   display: flex;
   align-items: center;
   justify-content: center;

@@ -74,7 +74,8 @@ export const dbStore = {
   },
 
   async recordProfileView(viewerId, profileId) {
-    if (!viewerId || !profileId || String(viewerId) === String(profileId)) return;
+    if (!viewerId || !profileId || String(viewerId) === String(profileId))
+      return;
 
     try {
       // 1. Insert into profile_views
@@ -141,7 +142,9 @@ export const dbStore = {
         .select("*")
         .in("user_id", userIds);
 
-      const authorsMap = new Map((authors || []).map((a) => [String(a.user_id), a]));
+      const authorsMap = new Map(
+        (authors || []).map((a) => [String(a.user_id), a]),
+      );
 
       // Fetch like statuses for current user
       const postIds = rawPosts.map((p) => p.id);
@@ -174,7 +177,7 @@ export const dbStore = {
           .in("user_id", commentUserIds);
 
         commentAuthorsMap = new Map(
-          (commentAuthors || []).map((ca) => [String(ca.user_id), ca])
+          (commentAuthors || []).map((ca) => [String(ca.user_id), ca]),
         );
       }
 
@@ -218,8 +221,8 @@ export const dbStore = {
           images: Array.isArray(post.images)
             ? post.images
             : typeof post.images === "string"
-            ? JSON.parse(post.images || "[]")
-            : [],
+              ? JSON.parse(post.images || "[]")
+              : [],
           author: {
             id: author.id,
             user_id: author.user_id,
@@ -244,7 +247,7 @@ export const dbStore = {
         enriched = enriched.filter(
           (p) =>
             p.author?.region?.toLowerCase() === region.toLowerCase() ||
-            p.location?.toLowerCase().includes(region.toLowerCase())
+            p.location?.toLowerCase().includes(region.toLowerCase()),
         );
       }
 
@@ -265,8 +268,8 @@ export const dbStore = {
       if (interest && interest !== "all") {
         enriched = enriched.filter((p) =>
           p.author?.interests?.some(
-            (i) => i.toLowerCase() === interest.toLowerCase()
-          )
+            (i) => i.toLowerCase() === interest.toLowerCase(),
+          ),
         );
       }
 
@@ -277,7 +280,7 @@ export const dbStore = {
             p.caption?.toLowerCase().includes(q) ||
             p.location?.toLowerCase().includes(q) ||
             p.author?.first_name?.toLowerCase().includes(q) ||
-            p.author?.interests?.some((i) => i.toLowerCase().includes(q))
+            p.author?.interests?.some((i) => i.toLowerCase().includes(q)),
         );
       }
 
@@ -288,7 +291,8 @@ export const dbStore = {
 
           if (currentUser.gender && item.author?.gender) {
             if (
-              (currentUser.gender === "male" && item.author.gender === "female") ||
+              (currentUser.gender === "male" &&
+                item.author.gender === "female") ||
               (currentUser.gender === "female" && item.author.gender === "male")
             ) {
               score += 35;
@@ -298,7 +302,8 @@ export const dbStore = {
           if (
             currentUser.region &&
             item.author?.region &&
-            currentUser.region.toLowerCase() === item.author.region.toLowerCase()
+            currentUser.region.toLowerCase() ===
+              item.author.region.toLowerCase()
           ) {
             score += 30;
           }
@@ -310,29 +315,35 @@ export const dbStore = {
             ? item.author.interests
             : [];
           const shared = myInterests.filter((mi) =>
-            authorInterests.some((ai) => ai.toLowerCase() === mi.toLowerCase())
+            authorInterests.some((ai) => ai.toLowerCase() === mi.toLowerCase()),
           );
           score += Math.min(shared.length * 15, 60);
 
           score += (item.likes_count || 0) * 2 + (item.comments_count || 0) * 3;
 
           const hoursAgo =
-            (Date.now() - new Date(item.created_at).getTime()) / (1000 * 60 * 60);
+            (Date.now() - new Date(item.created_at).getTime()) /
+            (1000 * 60 * 60);
           if (hoursAgo < 24) {
             score += 20;
           } else if (hoursAgo < 72) {
             score += 10;
           }
 
-          return { ...item, recommendationScore: score, sharedInterests: shared };
+          return {
+            ...item,
+            recommendationScore: score,
+            sharedInterests: shared,
+          };
         });
 
         enriched.sort(
-          (a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0)
+          (a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0),
         );
       } else {
         enriched.sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
         );
       }
 
@@ -426,7 +437,10 @@ export const dbStore = {
       const likesCount = count || 0;
       await supabase
         .from("posts")
-        .update({ likes_count: likesCount, updated_at: new Date().toISOString() })
+        .update({
+          likes_count: likesCount,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", postId);
 
       return { hasLiked, likesCount };
@@ -501,7 +515,7 @@ export const dbStore = {
         .in("user_id", userIds);
 
       const authorsMap = new Map(
-        (authors || []).map((a) => [String(a.user_id), a])
+        (authors || []).map((a) => [String(a.user_id), a]),
       );
 
       return comments.map((c) => {
@@ -528,41 +542,60 @@ export const dbStore = {
       const currentUser = await this.findUser(currentUserId);
       if (!currentUser) return [];
 
-      const myGender = currentUser.gender;
-      const targetGender =
-        myGender === "male" ? "female" : myGender === "female" ? "male" : null;
+      // 1. Jins filtrini belgilash
+      // Agar filters.gender kelgan bo'lsa, shuni oladi.
+      // Aks holda sukut bo'yicha (default) qarama-qarshi jins olinadi.
+      let selectedGender = filters.gender;
+      if (!selectedGender) {
+        const myGender = currentUser.gender;
+        selectedGender =
+          myGender === "male"
+            ? "female"
+            : myGender === "female"
+              ? "male"
+              : "all";
+      }
 
-      // Get already swiped target user IDs
+      // Swiped qilingan foydalanuvchilar ID'sini olish
       const { data: swipes } = await supabase
         .from("dating_swipes")
         .select("target_id")
         .eq("sender_id", Number(currentUserId));
 
       const swipedIds = new Set((swipes || []).map((s) => Number(s.target_id)));
-      swipedIds.add(Number(currentUserId)); // Exclude self
+      swipedIds.add(Number(currentUserId)); // O'zini ro'yxatdan chiqarish
 
       let query = supabase.from("users").select("*");
-      if (targetGender) {
-        query = query.eq("gender", targetGender);
+
+      // 2. Agar selectedGender "all" bo'lmasa, ma'lum jins bo'yicha filter qilamiz
+      if (selectedGender && selectedGender !== "all") {
+        query = query.eq("gender", selectedGender);
       }
 
       const { data: allUsers, error } = await query;
       if (error || !allUsers) return [];
 
-      let candidates = allUsers.filter((u) => !swipedIds.has(Number(u.user_id)));
+      // Allaqachon swipe qilinganlarni chiqarib tashlaymiz
+      let candidates = allUsers.filter(
+        (u) => !swipedIds.has(Number(u.user_id)),
+      );
 
+      // 3. Viloyat bo'yicha filtr
       if (filters.region && filters.region !== "all") {
         candidates = candidates.filter(
-          (c) => c.region?.toLowerCase() === filters.region.toLowerCase()
+          (c) => c.region?.toLowerCase() === filters.region.toLowerCase(),
         );
       }
 
+      // 4. Yosh bo'yicha filtr
       if (filters.ageMin || filters.ageMax) {
         candidates = candidates.filter((c) => {
           const age = c.age || this.calculateAge(c.birth_date);
           if (!age) return true;
-          if (filters.ageMin && age < parseInt(filters.ageMin, 10)) return false;
-          if (filters.ageMax && age > parseInt(filters.ageMax, 10)) return false;
+          if (filters.ageMin && age < parseInt(filters.ageMin, 10))
+            return false;
+          if (filters.ageMax && age > parseInt(filters.ageMax, 10))
+            return false;
           return true;
         });
       }
@@ -574,7 +607,7 @@ export const dbStore = {
       return candidates.map((c) => {
         const cInterests = Array.isArray(c.interests) ? c.interests : [];
         const shared = myInterests.filter((mi) =>
-          cInterests.some((ci) => ci.toLowerCase() === mi.toLowerCase())
+          cInterests.some((ci) => ci.toLowerCase() === mi.toLowerCase()),
         );
 
         let compatibility = 65;
@@ -593,7 +626,8 @@ export const dbStore = {
           user_id: c.user_id,
           first_name: c.first_name,
           username: c.username,
-          bio: c.bio || "Salom! Yaqin ilovasida yangi tanishuvlarga ochiqman 😊",
+          bio:
+            c.bio || "Salom! Yaqin ilovasida yangi tanishuvlarga ochiqman 😊",
           profile_pic: c.profile_pic,
           gender: c.gender,
           region: c.region,
@@ -614,17 +648,15 @@ export const dbStore = {
       const cleanSenderId = Number(senderId);
       const cleanTargetId = Number(targetId);
 
-      const { error: swipeErr } = await supabase
-        .from("dating_swipes")
-        .upsert(
-          {
-            sender_id: cleanSenderId,
-            target_id: cleanTargetId,
-            action,
-            created_at: new Date().toISOString(),
-          },
-          { onConflict: "sender_id,target_id" }
-        );
+      const { error: swipeErr } = await supabase.from("dating_swipes").upsert(
+        {
+          sender_id: cleanSenderId,
+          target_id: cleanTargetId,
+          action,
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: "sender_id,target_id" },
+      );
 
       if (swipeErr) {
         console.warn("Swipe upsert warning:", swipeErr.message);
@@ -651,7 +683,7 @@ export const dbStore = {
             .from("matches")
             .select("*")
             .or(
-              `and(user1_id.eq.${cleanSenderId},user2_id.eq.${cleanTargetId}),and(user1_id.eq.${cleanTargetId},user2_id.eq.${cleanSenderId})`
+              `and(user1_id.eq.${cleanSenderId},user2_id.eq.${cleanTargetId}),and(user1_id.eq.${cleanTargetId},user2_id.eq.${cleanSenderId})`,
             )
             .maybeSingle();
 
@@ -699,7 +731,9 @@ export const dbStore = {
       }
 
       const partnerIds = userMatches.map((m) =>
-        Number(m.user1_id) === cleanUserId ? Number(m.user2_id) : Number(m.user1_id)
+        Number(m.user1_id) === cleanUserId
+          ? Number(m.user2_id)
+          : Number(m.user1_id),
       );
 
       const { data: partnerUsers } = await supabase
@@ -708,7 +742,7 @@ export const dbStore = {
         .in("user_id", partnerIds);
 
       const partnerMap = new Map(
-        (partnerUsers || []).map((u) => [String(u.user_id), u])
+        (partnerUsers || []).map((u) => [String(u.user_id), u]),
       );
 
       return userMatches.map((m) => {
@@ -821,7 +855,7 @@ export const dbStore = {
         .from("messages")
         .select("*")
         .or(
-          `and(sender_id.eq.${u1},receiver_id.eq.${u2}),and(sender_id.eq.${u2},receiver_id.eq.${u1})`
+          `and(sender_id.eq.${u1},receiver_id.eq.${u2}),and(sender_id.eq.${u2},receiver_id.eq.${u1})`,
         )
         .order("created_at", { ascending: true });
 

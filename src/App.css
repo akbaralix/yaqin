@@ -9,7 +9,7 @@
   --text-main: #0f172a;
   --text-muted: #64748b;
   --accent-pink: #f50d47;
-  --accent-green: #10b981;
+  --accent-green: #10b93a;
   --radius-lg: 20px;
   --radius-md: 14px;
   --radius-sm: 8px;
@@ -994,7 +994,7 @@ body {
 
 .dating-filters-box label {
   font-size: 11px;
-  font-weight: 700;
+
   color: var(--text-muted);
 }
 
@@ -1086,7 +1086,6 @@ body {
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 12px;
-  font-weight: 700;
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -1400,7 +1399,6 @@ body {
   background: var(--dating-gradient);
   color: #fff;
   font-size: 15px;
-  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1510,8 +1508,8 @@ body {
   border-radius: var(--radius-md);
   border: 1px solid #e2e8f0;
   background: #fff;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 15px;
+  font-family: "poppins";
   color: var(--text-main);
   display: flex;
   align-items: center;
@@ -1890,6 +1888,7 @@ body {
 }
 
 .match-card {
+  position: relative;
   background: var(--surface);
   border-radius: var(--radius-lg);
   border: 1px solid var(--card-border);
@@ -1909,7 +1908,34 @@ body {
   border: 3px solid var(--accent-pink);
   margin-bottom: 10px;
 }
-
+.open-delete-modal {
+  position: absolute;
+  right: 12px;
+  font-size: 20px;
+  color: red;
+}
+.delete-chat-modal {
+  background-color: white;
+  width: 350px;
+  margin: 12px;
+  padding: 12px;
+  border-radius: 15px;
+}
+.delete-chat-modal h2 {
+  font-weight: 500;
+  font-size: 20px;
+}
+.delete-chat-buton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 15px;
+  justify-content: flex-end;
+}
+.delete-chat-buton button {
+  font-family: "poppins";
+  background: none;
+}
 .match-name-row {
   display: flex;
   align-items: center;
@@ -3072,7 +3098,6 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 2px dashed var(--primary);
   background: linear-gradient(
     135deg,
     rgba(126, 62, 246, 0.08),
@@ -3085,16 +3110,155 @@ body {
   flex-shrink: 0;
   overflow: hidden;
 }
+.profile-sticker-badge.telegram-sparkle-badge {
+  position: relative;
+  overflow: visible;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 
-.profile-sticker-badge:hover {
-  border-style: solid;
-  background: linear-gradient(
-    135deg,
-    rgba(126, 62, 246, 0.15),
-    rgba(100, 65, 247, 0.1)
-  );
-  transform: scale(1.12);
-  box-shadow: 0 0 12px rgba(126, 62, 246, 0.3);
+.sticker-badge-img {
+  position: relative;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+/* Sparkles Asosiy Stili */
+.sparkle-particle {
+  position: absolute;
+  z-index: 1;
+  color: #ffd700;
+  pointer-events: none;
+  opacity: 0;
+  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.9));
+}
+
+/* 1-Yulduzcha: Chap tepaga uchadi */
+.sparkle-particle.p-top-left {
+  top: 20%;
+  left: 20%;
+  font-size: 8px;
+  animation: floatTopLeft 2.2s infinite linear;
+  animation-delay: 0s;
+}
+
+/* 2-Yulduzcha: O'ng tepaga uchadi */
+.sparkle-particle.p-top-right {
+  top: 30%;
+  right: 15%;
+  font-size: 11px;
+  animation: floatTopRight 2.5s infinite linear;
+  animation-delay: 0.6s;
+}
+
+/* 3-Yulduzcha: Chap pastga/yonga uchadi */
+.sparkle-particle.p-bottom-left {
+  bottom: 25%;
+  left: 10%;
+  font-size: 9px;
+  animation: floatBottomLeft 2.8s infinite linear;
+  animation-delay: 1.2s;
+}
+
+/* 4-Yulduzcha: O'ng pastga uchadi */
+.sparkle-particle.p-bottom-right {
+  bottom: 15%;
+  right: 20%;
+  font-size: 7px;
+  animation: floatBottomRight 2.1s infinite linear;
+  animation-delay: 1.7s;
+}
+
+/* 5-Yulduzcha: Qoq markazdan to'g'ri tepaga uchadi */
+.sparkle-particle.p-center-up {
+  top: 40%;
+  left: 45%;
+  font-size: 10px;
+  animation: floatCenterUp 2.4s infinite linear;
+  animation-delay: 0.9s;
+}
+
+/* ---- HAR XIL TRAJEKTORIYA ANIMATSIYALARI ---- */
+
+@keyframes floatTopLeft {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.2) rotate(0deg);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(-8px, -10px) scale(1.2) rotate(90deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-14px, -18px) scale(0.3) rotate(180deg);
+  }
+}
+
+@keyframes floatTopRight {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.2) rotate(0deg);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(10px, -8px) scale(1.3) rotate(-90deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(16px, -16px) scale(0.2) rotate(-180deg);
+  }
+}
+
+@keyframes floatBottomLeft {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.2) rotate(0deg);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(-10px, 6px) scale(1.1) rotate(60deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-16px, 12px) scale(0.2) rotate(120deg);
+  }
+}
+
+@keyframes floatBottomRight {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.2) rotate(0deg);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(8px, 8px) scale(1.2) rotate(-60deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(14px, 14px) scale(0.2) rotate(-120deg);
+  }
+}
+
+@keyframes floatCenterUp {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.2) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(0, -12px) scale(1.4) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, -22px) scale(0.2) rotate(360deg);
+  }
 }
 
 .profile-sticker-badge .sticker-badge-img {
@@ -3105,7 +3269,7 @@ body {
 }
 
 .profile-sticker-badge .sticker-placeholder {
-  font-size: 16px;
+  font-size: 20px;
   color: var(--primary);
   font-weight: 700;
   line-height: 1;

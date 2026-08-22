@@ -65,11 +65,18 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
               {/* Profile Sticker Badge - click to open picker */}
               <h1>{user.first_name}</h1>{" "}
               <button
-                className="profile-sticker-badge"
+                className="profile-sticker-badge telegram-sparkle-badge"
                 onClick={() => setIsStickerPickerOpen(true)}
                 title="Stiker o'rnatish / o'zgartirish"
               >
-                {user.profile_sticker ? (
+                {/* Random harakatlanuvchi 5 ta zarracha */}
+                <span className="sparkle-particle p-top-left">✦</span>
+                <span className="sparkle-particle p-top-right">★</span>
+                <span className="sparkle-particle p-bottom-left">✦</span>
+                <span className="sparkle-particle p-bottom-right">★</span>
+                <span className="sparkle-particle p-center-up">✦</span>
+
+                {user?.profile_sticker ? (
                   <img
                     className="sticker-badge-img"
                     src={user.profile_sticker}

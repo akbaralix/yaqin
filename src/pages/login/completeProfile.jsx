@@ -139,6 +139,7 @@ function CompleteProfile() {
       toast.error("Ismingizni kiriting!");
       return;
     }
+
     if (!formData.birthDate) {
       toast.error("Tug'ilgan sanangizni tanlang!");
       return;
@@ -157,6 +158,10 @@ function CompleteProfile() {
 
     if (!formData.gender) {
       toast.error("Iltimos, jinsingizni tanlang!");
+      return;
+    }
+    if (formData.bio.trim().length < 10) {
+      toast.error("Bio ga o'zingiz haqingizda kamida 10 ta belgi yozing!");
       return;
     }
     if (selectedInterests.length < 3) {
