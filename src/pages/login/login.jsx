@@ -11,6 +11,24 @@ import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
 import "./login.css";
 
+// Harf/UUID dan har doim BIR XIL takrorlanmas raqam hosil qiluvchi barqaror (deterministic) funksiya
+function getDeterministicNumericId(inputStr) {
+  if (!inputStr) return Math.floor(Date.now() / 1000);
+
+  // Agar str faqat raqamlardan iborat bo'lsa (Google sub kabi)
+  if (/^\d+$/.test(inputStr)) {
+    return inputStr.length > 15 ? inputStr.slice(-15) : inputStr;
+  }
+
+  let hash = 0;
+  for (let i = 0; i < inputStr.length; i++) {
+    const char = inputStr.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString();
+}
+
 function Login() {
   const [loading, setLoading] = useState(false);
   const [loginType, setLoginType] = useState("default");
@@ -53,6 +71,16 @@ function Login() {
         if (event === "SIGNED_IN" && session?.user) {
           try {
             const googleUser = session.user;
+
+            // Google'ning o'zgarmas asl raqamli sub-ID si yoki Supabase ID-si
+            const rawGoogleId =
+              googleUser.identities?.[0]?.identity_data?.sub ||
+              googleUser.user_metadata?.sub ||
+              googleUser.id;
+
+            // Har doim bir xil va faqat raqamlardan iborat unikal ID
+            const stableNumericId = getDeterministicNumericId(rawGoogleId);
+
             const res = await api.googleAuth({
               email: googleUser.email,
               name:
@@ -60,7 +88,7 @@ function Login() {
                 googleUser.user_metadata?.name ||
                 "Foydalanuvchi",
               avatar: googleUser.user_metadata?.avatar_url,
-              googleId: googleUser.id,
+              googleId: stableNumericId,
             });
 
             if (res?.token) {
