@@ -629,6 +629,7 @@ export const dbStore = {
           bio:
             c.bio || "Salom! Yaqin ilovasida yangi tanishuvlarga ochiqman 😊",
           profile_pic: c.profile_pic,
+          profile_sticker: c.profile_sticker,
           gender: c.gender,
           region: c.region,
           age: c.age || this.calculateAge(c.birth_date),

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaTimes,
   FaCamera,
@@ -52,17 +52,29 @@ const interestsList = [
 
 function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
   const { user, refreshUser } = useAuth();
-  const [firstName, setFirstName] = useState(user?.first_name || "");
-  const [bio, setBio] = useState(user?.bio || "");
-  const [birthDate, setBirthDate] = useState(user?.birth_date || "");
-  const [region, setRegion] = useState(user?.region || "");
-  const [gender, setGender] = useState(user?.gender || "male");
-  const [interests, setInterests] = useState(
-    Array.isArray(user?.interests) ? user.interests : [],
-  );
+  const [firstName, setFirstName] = useState("");
+  const [bio, setBio] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [region, setRegion] = useState("");
+  const [gender, setGender] = useState("male");
+  const [interests, setInterests] = useState([]);
   const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState(user?.profile_pic || null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // MANTIQIY XATO 2 TUZATILDI: State'larni user o'zgarganda doim yangilash
+  useEffect(() => {
+    if (user && isOpen) {
+      setFirstName(user.first_name || "");
+      setBio(user.bio || "");
+      setBirthDate(user.birth_date || "");
+      setRegion(user.region || "");
+      setGender(user.gender || "male");
+      setInterests(Array.isArray(user.interests) ? user.interests : []);
+      setAvatarPreview(user.profile_pic || null);
+      setAvatarFile(null);
+    }
+  }, [user, isOpen]);
 
   if (!isOpen) return null;
 
@@ -86,6 +98,14 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
     e.preventDefault();
     if (!firstName.trim()) {
       toast.error("Ismingizni kiriting!");
+      return;
+    }
+    if (bio.trim().length < 10) {
+      toast.error("Bio ga o'zingiz haqingizda kamida 10 ta belgi yozing!");
+      return;
+    }
+    if (interests.length < 3) {
+      toast.error("Kamida 3 ta qiziqishni tanlang!");
       return;
     }
 
@@ -174,7 +194,6 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
             />
           </div>
 
-          {/* Bio */}
           <div className="form-group">
             <label>Bio / O'zingiz haqingizda</label>
             <textarea
@@ -186,13 +205,15 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
           </div>
 
           <div className="form-row-2">
-            {/* Birth Date */}
             <div className="form-group">
               <label>Tug'ilgan sana</label>
+              {/* MANTIQIY XATO 1 TUZATILDI: max="2026-12-31" */}
               <input
                 type="date"
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
+                min="1950-01-01"
+                max={new Date().toISOString().split("T")[0]}
               />
             </div>
 

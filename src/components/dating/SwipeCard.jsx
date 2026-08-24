@@ -15,6 +15,7 @@ function SwipeCard({ candidate, onSwipe, isTop }) {
   const startPosRef = useRef({ x: 0, y: 0 });
 
   if (!candidate) return null;
+  console.log(candidate);
 
   // Touch & Mouse Drag Handlers
   const handleTouchStart = (e) => {
@@ -144,6 +145,12 @@ function SwipeCard({ candidate, onSwipe, isTop }) {
       <div className="dating-card-info">
         <div className="dating-name-row">
           <h3 className="dating-user-name">
+            {candidate.profile_sticker && (
+              <div className="dating-user-sticker">
+                <img src={candidate.profile_sticker} alt="stiker" />
+              </div>
+            )}
+
             {candidate.first_name}
             {candidate.age && (
               <span className="dating-age">, {candidate.age}</span>

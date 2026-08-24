@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { SiTelegram } from "react-icons/si";
-import { BsRobot, BsShieldCheck, BsHeartFill } from "react-icons/bs";
+import { BsRobot, BsShieldCheck } from "react-icons/bs";
 import { IoArrowBackOutline } from "react-icons/io5";
 import toast from "react-hot-toast";
 
@@ -10,24 +10,6 @@ import { supabase } from "../../components/supabase/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
 import "./login.css";
-
-// Harf/UUID dan har doim BIR XIL takrorlanmas raqam hosil qiluvchi barqaror (deterministic) funksiya
-function getDeterministicNumericId(inputStr) {
-  if (!inputStr) return Math.floor(Date.now() / 1000);
-
-  // Agar str faqat raqamlardan iborat bo'lsa (Google sub kabi)
-  if (/^\d+$/.test(inputStr)) {
-    return inputStr.length > 15 ? inputStr.slice(-15) : inputStr;
-  }
-
-  let hash = 0;
-  for (let i = 0; i < inputStr.length; i++) {
-    const char = inputStr.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0;
-  }
-  return Math.abs(hash).toString();
-}
 
 function Login() {
   const [loading, setLoading] = useState(false);
@@ -42,8 +24,9 @@ function Login() {
 
   const navigate = useNavigate();
   const channelRef = useRef(null);
+  const isProcessingGoogle = useRef(false);
 
-  // If already logged in, redirect
+  // Tizimga kirgan bo'lsa yo'naltirish
   useEffect(() => {
     if (authLoading) return;
     if (token) {
@@ -55,7 +38,6 @@ function Login() {
     }
   }, [token, isProfileComplete, authLoading, navigate]);
 
-  // Clean up supabase real-time subscription on unmount
   useEffect(() => {
     return () => {
       if (channelRef.current) {
@@ -64,22 +46,28 @@ function Login() {
     };
   }, []);
 
-  // Listen to Supabase Auth state (for Google OAuth redirect)
+  // Google OAuth tinglovchisi (TUZATILGAN QISMI)
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "SIGNED_IN" && session?.user) {
+        // Faqat haqiqatdan ham Google provayderi orqali qaytgan bo'lsa ishlaydi
+        const isGoogleProvider =
+          session?.user?.app_metadata?.provider === "google";
+
+        if (
+          event === "SIGNED_IN" &&
+          session?.user &&
+          isGoogleProvider && // <<-- TUZATISH: Faqat Google provayderi bo'lsa
+          !isProcessingGoogle.current
+        ) {
+          isProcessingGoogle.current = true;
           try {
             const googleUser = session.user;
 
-            // Google'ning o'zgarmas asl raqamli sub-ID si yoki Supabase ID-si
             const rawGoogleId =
               googleUser.identities?.[0]?.identity_data?.sub ||
               googleUser.user_metadata?.sub ||
               googleUser.id;
-
-            // Har doim bir xil va faqat raqamlardan iborat unikal ID
-            const stableNumericId = getDeterministicNumericId(rawGoogleId);
 
             const res = await api.googleAuth({
               email: googleUser.email,
@@ -88,12 +76,13 @@ function Login() {
                 googleUser.user_metadata?.name ||
                 "Foydalanuvchi",
               avatar: googleUser.user_metadata?.avatar_url,
-              googleId: stableNumericId,
+              googleId: rawGoogleId,
             });
 
             if (res?.token) {
               loginWithToken(res.token, res.user);
               toast.success("Google orqali muvaffaqiyatli kirdingiz!");
+
               const isComplete = Boolean(
                 res.is_profile_complete ||
                 res.isProfileComplete ||
@@ -102,15 +91,16 @@ function Login() {
                   res.user?.region &&
                   (res.user?.birth_date || res.user?.age)),
               );
-              if (isComplete) {
-                navigate("/", { replace: true });
-              } else {
-                navigate("/complete-profile", { replace: true });
-              }
+
+              navigate(isComplete ? "/" : "/complete-profile", {
+                replace: true,
+              });
             }
           } catch (err) {
             console.error("Google sync error:", err);
             toast.error("Google orqali kirishda xatolik");
+          } finally {
+            isProcessingGoogle.current = false;
           }
         }
       },
@@ -121,7 +111,7 @@ function Login() {
     };
   }, [navigate, loginWithToken]);
 
-  // 1. Google OAuth orqali kirish
+  // Google bilan kirish
   async function handleLoginGoogle() {
     try {
       setLoading(true);
@@ -141,15 +131,18 @@ function Login() {
     }
   }
 
-  function handleLoginTG() {
+  // Telegram bosilganda eski Supabase OAuth sessiyasini tozalaymiz (TUZATILGAN QISMI)
+  async function handleLoginTG() {
     setLoginType("telegram");
+    // Eski Google sessiyasidan chiqib ketamiz, Telegramga xalaqit bermasligi uchun
+    await supabase.auth.signOut();
   }
 
   function generateOTP() {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  // 2. Telegram Bot tasdiqlashini kutish va Backend'dan JWT token olish
+  // Telegram real-time tinglash
   function listenToAuthStatus(otp) {
     setStatusMessage("Botda '✅ Kirish' tugmasini bosishingiz kutilmoqda...");
 
@@ -188,11 +181,9 @@ function Login() {
                     (data.user?.birth_date || data.user?.age)),
                 );
 
-                if (isComplete) {
-                  navigate("/", { replace: true });
-                } else {
-                  navigate("/complete-profile", { replace: true });
-                }
+                navigate(isComplete ? "/" : "/complete-profile", {
+                  replace: true,
+                });
               } else {
                 setStatusMessage(
                   data.error || "Token olishda xatolik yuz berdi",
@@ -222,7 +213,7 @@ function Login() {
     channelRef.current = channel;
   }
 
-  // 3. Telegram orqali kirish tugmasi bosilganda
+  // Telegram botga o'tish
   async function loginTG() {
     setLoading(true);
     setStatusMessage("OTP kod yaratilmoqda...");
@@ -234,12 +225,14 @@ function Login() {
 
     try {
       const otp = generateOTP();
+      const tgWindow = window.open("", "_blank");
 
       const { error } = await supabase
         .from("telegram_auth_sessions")
         .insert([{ otp_code: otp, status: "pending" }]);
 
       if (error) {
+        if (tgWindow) tgWindow.close();
         console.error("OTP saqlashda xatolik:", error);
         setStatusMessage("Xatolik yuz berdi. Qaytadan urinib ko'ring.");
         setLoading(false);
@@ -248,7 +241,11 @@ function Login() {
 
       listenToAuthStatus(otp);
 
-      window.open(`https://t.me/Yaqinauthbot?start=${otp}`, "_blank");
+      if (tgWindow) {
+        tgWindow.location.href = `https://t.me/Yaqinauthbot?start=${otp}`;
+      } else {
+        window.location.href = `https://t.me/Yaqinauthbot?start=${otp}`;
+      }
     } catch (err) {
       console.error("loginTG Catch Error:", err);
       setStatusMessage("Kutilmagan xatolik.");
@@ -259,9 +256,9 @@ function Login() {
   return (
     <main className="login-page">
       <div className="app-brand-badge">
-        <span className="brand-icon">
-          <BsHeartFill color="#7e3ef6" />
-        </span>
+        <div className="brand-icon">
+          <img src="/icon.png" alt="App Logo" />
+        </div>
         <span className="brand-name">Yaqin</span>
       </div>
 
@@ -279,7 +276,11 @@ function Login() {
               <SiTelegram /> Telegram orqali tezkor kirish
             </button>
 
-            <button onClick={handleLoginGoogle} className="login-btn-google">
+            <button
+              onClick={handleLoginGoogle}
+              className="login-btn-google"
+              disabled={loading}
+            >
               <FcGoogle /> Google hisobi orqali kirish
             </button>
           </section>

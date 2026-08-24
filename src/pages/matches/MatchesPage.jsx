@@ -419,9 +419,7 @@ function MatchesPage() {
                 />
                 <div>
                   <h4>{chatUser.first_name}</h4>
-                  <span className="online-indicator">
-                    🟢 Jonli chat (Realtime)
-                  </span>
+                  <span className="online-indicator">🟢 Jonli chat</span>
                 </div>
               </div>
               <button
@@ -509,7 +507,6 @@ function MatchesPage() {
                   placeholder="Xabaringizni yozing..."
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
-                  autoFocus
                 />
                 <button
                   type="submit"

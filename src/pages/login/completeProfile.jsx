@@ -275,7 +275,7 @@ function CompleteProfile() {
               type="date"
               name="birthDate"
               min="1950-01-01"
-              max="2008-12-31"
+              max="2015-12-31"
               value={formData.birthDate}
               onChange={handleChange}
               required

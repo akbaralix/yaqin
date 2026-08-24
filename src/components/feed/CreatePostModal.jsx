@@ -169,7 +169,6 @@ function CreatePostModal({ isOpen, onClose, onPostCreated }) {
             />
           </div>
 
-          {/* Location Input (Optional) */}
           <div className="form-group">
             <label>Joylashuv (Ixtiyoriy)</label>
             <div className="location-input-wrapper">
