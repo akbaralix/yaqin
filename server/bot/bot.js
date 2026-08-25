@@ -3,7 +3,7 @@ import { supabase } from "../supabase/supabase.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const token = "8934833118:AAHbxmKnaCDPhbuw7bxUzhTISp0xChs9h_0";
+const token = process.env.BOT_TOKEN;
 
 export const bot = token ? new Telegraf(token) : null;
 
