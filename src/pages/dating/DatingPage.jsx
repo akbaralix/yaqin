@@ -41,6 +41,8 @@ function DatingPage() {
     initDatingFilters,
     updateDatingFilters,
     removeCandidateLocally,
+    addMatchLocally,
+    loadMatches,
   } = useDataCache();
 
   const [activeMatchUser, setActiveMatchUser] = useState(null);
@@ -79,7 +81,27 @@ function DatingPage() {
       const res = await api.swipeCandidate(targetId, action);
 
       if (res?.isMatch) {
-        setActiveMatchUser(res.matchedUser || candidate);
+        const matched = res.matchedUser || candidate;
+        setActiveMatchUser(matched);
+
+        // Yangi matchni lokal ro'yxatga kiritib qo'yamiz va keshni yangilaymiz
+        if (matched) {
+          addMatchLocally({
+            match_id: res.match?.id || `match_${Date.now()}`,
+            matched_at: res.match?.created_at || new Date().toISOString(),
+            user: {
+              user_id: matched.user_id,
+              first_name: matched.first_name,
+              username: matched.username,
+              profile_pic: matched.profile_pic,
+              gender: matched.gender,
+              region: matched.region,
+              bio: matched.bio,
+              age: matched.age,
+              interests: matched.interests || [],
+            },
+          });
+        }
       } else if (action === "like") {
         toast.success("Yoqdi! ❤️ Agar u ham yoqtirsa, match bo'ladi");
       }

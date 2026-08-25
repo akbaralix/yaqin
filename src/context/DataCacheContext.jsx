@@ -146,6 +146,24 @@ export function DataCacheProvider({ children }) {
     [],
   );
 
+  const addMatchLocally = useCallback((newMatch) => {
+    if (!newMatch) return;
+    setMatches((prev) => {
+      const matchId = newMatch.match_id || newMatch.id;
+      const partnerId = newMatch.user?.user_id || newMatch.user_id;
+      // Agar avval mavjud bo'lsa yangilaymiz
+      const exists = prev.some(
+        (m) =>
+          (matchId && m.match_id === matchId) ||
+          (partnerId && m.user?.user_id === partnerId)
+      );
+      if (exists) return prev;
+      return [newMatch, ...prev];
+    });
+    // Keshni yangilab qo'yamiz
+    matchesLoaded.current = false;
+  }, []);
+
   const removeMatchLocally = useCallback((matchId) => {
     setMatches((prev) => prev.filter((m) => m.match_id !== matchId));
   }, []);
@@ -231,6 +249,7 @@ export function DataCacheProvider({ children }) {
         matches,
         matchesLoading,
         loadMatches,
+        addMatchLocally,
         removeMatchLocally,
 
         // Profile posts

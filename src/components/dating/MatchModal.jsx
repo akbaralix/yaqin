@@ -70,7 +70,9 @@ function MatchModal({ matchUser, onClose }) {
             className="match-chat-btn"
             onClick={() => {
               onClose();
-              navigate("/matches");
+              navigate(`/matches?userId=${matchUser.user_id}`, {
+                state: { autoOpenUser: matchUser },
+              });
             }}
           >
             <FaComments /> Suhbatni boshlash

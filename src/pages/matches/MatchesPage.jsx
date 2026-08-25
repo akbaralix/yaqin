@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   FaHeart,
   FaComments,
@@ -22,6 +22,8 @@ import StickerPicker from "../../components/dating/StickerPicker";
 
 function MatchesPage() {
   const { user } = useAuth();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { matches, matchesLoading, loadMatches, removeMatchLocally } =
     useDataCache();
 
@@ -41,11 +43,36 @@ function MatchesPage() {
   const messagesEndRef = useRef(null);
   const realtimeChannelRef = useRef(null);
   const stickerPickerRef = useRef(null);
+  const autoOpenedRef = useRef(false);
 
   // 1. Load user's matches (kesh bo'lsa yuklamaydi)
   useEffect(() => {
     loadMatches();
   }, [loadMatches]);
+
+  // 1.1 MatchModal yoki havola orqali kelganda to'g'ridan-to'g'ri o'sha user bilan chatni ochish
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+
+    const targetUserId = searchParams.get("userId");
+    const autoUser = location.state?.autoOpenUser;
+
+    if (autoUser && (!targetUserId || String(autoUser.user_id) === String(targetUserId))) {
+      autoOpenedRef.current = true;
+      handleOpenChat(autoUser);
+      return;
+    }
+
+    if (targetUserId && matches.length > 0) {
+      const foundMatch = matches.find(
+        (m) => String(m.user?.user_id) === String(targetUserId)
+      );
+      if (foundMatch?.user) {
+        autoOpenedRef.current = true;
+        handleOpenChat(foundMatch.user);
+      }
+    }
+  }, [searchParams, location.state, matches]);
 
   // 2. Auto-scroll chat to the bottom
   const scrollToBottom = (behavior = "smooth") => {
