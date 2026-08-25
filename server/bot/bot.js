@@ -1,7 +1,9 @@
 import { Telegraf, Markup } from "telegraf";
 import { supabase } from "../supabase/supabase.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const token = process.env.BOT_TOKEN;
+const token = "8934833118:AAHbxmKnaCDPhbuw7bxUzhTISp0xChs9h_0";
 
 export const bot = token ? new Telegraf(token) : null;
 
@@ -14,11 +16,31 @@ if (bot) {
 
   // 1. Foydalanuvchi /start <OTP> orqali kelganda
   bot.start(async (ctx) => {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+
+    const promoImage = path.join(__dirname, "YaqinPromo.png");
     const otpCode = String(ctx.payload).trim();
 
     if (!otpCode) {
-      return ctx.reply(
-        "Xush kelibsiz! Yaqin saytiga kirish uchun saytdagi havola orqali kiring.",
+      return ctx.replyWithPhoto(
+        { source: promoImage },
+        {
+          caption: `<b>💜 Yaqin'ga xush kelibsiz! ${ctx.from.first_name} 👋</b>
+
+Yangi tanishuvlar, samimiy suhbatlar va balki siz izlagan inson — barchasi shu yerda 😉
+
+<i>💜 Balki bugun aynan siz kutgan insonni toparsiz...</i>`,
+          parse_mode: "HTML",
+          ...Markup.inlineKeyboard([
+            [
+              Markup.button.webApp(
+                "💜 Yaqin'ni ochish",
+                "https://yaqin-uz.web.app",
+              ),
+            ],
+          ]),
+        },
       );
     }
 

@@ -61,7 +61,7 @@ function Login() {
               res.user?.is_profile_complete ||
               (res.user?.gender &&
                 res.user?.region &&
-                (res.user?.birth_date || res.user?.age))
+                (res.user?.birth_date || res.user?.age)),
             );
 
             navigate(isComplete ? "/" : "/complete-profile", {
@@ -296,9 +296,9 @@ function Login() {
       listenToAuthStatus(otp);
 
       if (tgWindow) {
-        tgWindow.location.href = `https://t.me/Yaqinauthbot?start=${otp}`;
+        tgWindow.location.href = `https://t.me/YaqinTanishuvlarbot?start=${otp}`;
       } else {
-        window.location.href = `https://t.me/Yaqinauthbot?start=${otp}`;
+        window.location.href = `https://t.me/YaqinTanishuvlarbot?start=${otp}`;
       }
     } catch (err) {
       console.error("loginTG Catch Error:", err);
@@ -363,9 +363,9 @@ function Login() {
           </button>
           <h2>Telegram orqali kirish</h2>
           <p>
-            Pastdagi tugmani bosganingizda <b>@Yaqinauth</b> botiga o'tasiz va u
-            yerda <b style={{ color: "#53fc7d" }}>"✅ Kirish"</b> tugmasi orqali
-            hisobingizni tasdiqlaysiz.
+            Pastdagi tugmani bosganingizda <b>@YaqinaTanishuvBot</b> botiga
+            o'tasiz va u yerda <b style={{ color: "#53fc7d" }}>"✅ Kirish"</b>{" "}
+            tugmasi orqali hisobingizni tasdiqlaysiz.
           </p>
 
           {statusMessage && <p className="status-message">{statusMessage}</p>}
