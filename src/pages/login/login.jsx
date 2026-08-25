@@ -25,6 +25,60 @@ function Login() {
   const navigate = useNavigate();
   const channelRef = useRef(null);
   const isProcessingGoogle = useRef(false);
+  const isProcessingTelegramWebApp = useRef(false);
+
+  // 1. Telegram WebApp orqali ochilgan bo'lsa darhol avtorizatsiya qilish
+  useEffect(() => {
+    async function checkTelegramWebApp() {
+      if (token || isProcessingTelegramWebApp.current) return;
+
+      const tg = window.Telegram?.WebApp;
+      const tgUser = tg?.initDataUnsafe?.user;
+
+      if (tgUser && tgUser.id) {
+        isProcessingTelegramWebApp.current = true;
+        setLoading(true);
+        setStatusMessage("Telegram orqali avtomatik kirilmoqda...");
+
+        try {
+          // Telegram WebApp interfeysini sozlash
+          tg.ready();
+          tg.expand?.();
+
+          const res = await api.telegramWebAppAuth({
+            id: tgUser.id,
+            first_name: tgUser.first_name,
+            last_name: tgUser.last_name,
+            username: tgUser.username,
+            photo_url: tgUser.photo_url,
+          });
+
+          if (res?.token) {
+            loginWithToken(res.token, res.user);
+            const isComplete = Boolean(
+              res.is_profile_complete ||
+              res.isProfileComplete ||
+              res.user?.is_profile_complete ||
+              (res.user?.gender &&
+                res.user?.region &&
+                (res.user?.birth_date || res.user?.age))
+            );
+
+            navigate(isComplete ? "/" : "/complete-profile", {
+              replace: true,
+            });
+          }
+        } catch (err) {
+          console.error("Telegram WebApp login error:", err);
+          setLoading(false);
+        } finally {
+          isProcessingTelegramWebApp.current = false;
+        }
+      }
+    }
+
+    checkTelegramWebApp();
+  }, [token, loginWithToken, navigate]);
 
   // Tizimga kirgan bo'lsa yo'naltirish
   useEffect(() => {

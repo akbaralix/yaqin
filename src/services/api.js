@@ -60,6 +60,12 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  telegramWebAppAuth: (tgUser) =>
+    request("/api/auth/telegram-webapp", {
+      method: "POST",
+      body: JSON.stringify(tgUser),
+    }),
+
   // User Profile
   completeProfile: (formData) =>
     request("/api/user/complete-profile", {

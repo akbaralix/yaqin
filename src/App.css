@@ -965,12 +965,17 @@ body {
   border-radius: var(--radius-md);
   border: 1px solid #e2e8f0;
   background: #fff;
-  font-weight: 600;
   font-size: 13px;
+  font-family: "poppins";
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
+}
+.dating-filter-toggle.active {
+  background-color: #6441f2;
+  border: 1px solid #6441f7;
+  color: white;
 }
 
 .dating-filters-box {
@@ -989,9 +994,14 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  flex-wrap: wrap;
   gap: 4px;
 }
-
+.dating-filters-box .filter-item select,
+.dating-filters-box .filter-item input {
+  border: 1px solid #6441f7;
+  outline: none;
+}
 .dating-filters-box label {
   font-size: 11px;
 
@@ -1004,6 +1014,11 @@ body {
   border-radius: var(--radius-sm);
   border: 1px solid #e2e8f0;
   font-size: 13px;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .age-inputs-row {
@@ -1281,6 +1296,10 @@ body {
   border: 1px solid var(--card-border);
   box-shadow: var(--shadow-sm);
   width: 100%;
+}
+.dating-empty-card h3 {
+  font-weight: 500;
+  margin-bottom: 15px;
 }
 
 .empty-fire-circle {
@@ -1917,12 +1936,13 @@ body {
   height: 74px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--accent-pink);
+  border: 3px solid var(--primary);
   margin-bottom: 10px;
 }
 .open-delete-modal {
   position: absolute;
   right: 12px;
+  background: none;
   font-size: 20px;
   color: red;
 }
@@ -1930,12 +1950,18 @@ body {
   background-color: white;
   width: 350px;
   margin: 12px;
-  padding: 12px;
+  padding: 16px;
   border-radius: 15px;
 }
 .delete-chat-modal h2 {
   font-weight: 500;
   font-size: 20px;
+  line-height: 23px;
+}
+.delete-chat-modal p {
+  line-height: 22px;
+  margin-top: 10px;
+  font-family: 12px;
 }
 .delete-chat-buton {
   display: flex;
@@ -1958,6 +1984,10 @@ body {
 .match-name-row h4 {
   font-size: 16px;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 .match-region {
@@ -3567,5 +3597,8 @@ body {
     right: 0;
     bottom: 20px;
     margin: 0 auto;
+  }
+  .dating-empty-card p {
+    font-size: 15px;
   }
 }

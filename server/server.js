@@ -10,6 +10,7 @@ import { startBot } from "./bot/bot.js";
 import {
   getToken,
   googleAuth,
+  telegramWebAppAuth,
   authenticateToken,
   optionalAuth,
   JWT_SECRET,
@@ -110,6 +111,7 @@ app.get("/", (req, res, next) => {
 // --- 2. AUTHENTICATION ENDPOINTS ---
 app.post("/api/auth/token", getToken);
 app.post("/api/auth/google", googleAuth);
+app.post("/api/auth/telegram-webapp", telegramWebAppAuth);
 
 // --- 3. ONBOARDING / COMPLETE PROFILE ---
 app.post(

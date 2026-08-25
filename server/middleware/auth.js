@@ -177,6 +177,79 @@ export const googleAuth = async (req, res) => {
 };
 
 /**
+ * 2.1 POST /api/auth/telegram-webapp
+ * Telegram Mini App (Web App) orqali to'g'ridan-to'g'ri avtorizatsiya
+ */
+export const telegramWebAppAuth = async (req, res) => {
+  try {
+    const { id, first_name, last_name, username, photo_url } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: "Telegram ID mavjud emas" });
+    }
+
+    const telegramId = Number(id);
+
+    // Userni bazadan topamiz
+    let user = await dbStore.findUser(telegramId);
+
+    if (!user) {
+      const displayName = [first_name, last_name].filter(Boolean).join(" ") || "Telegram Foydalanuvchi";
+      user = await dbStore.upsertUser({
+        user_id: telegramId,
+        first_name: displayName,
+        username: username || null,
+        profile_pic: photo_url || null,
+        is_profile_complete: false,
+      });
+    }
+
+    // Profil to'liqligini aniqlaymiz
+    const isProfileComplete = Boolean(
+      user.is_profile_complete === true ||
+        user.is_profile_complete === "true" ||
+        (user.gender &&
+          user.region &&
+          (user.birth_date || user.age) &&
+          (user.first_name || user.name))
+    );
+
+    if (isProfileComplete && !user.is_profile_complete) {
+      user = await dbStore.upsertUser({
+        ...user,
+        is_profile_complete: true,
+      });
+    }
+
+    // JWT token yaratamiz
+    const token = jwt.sign(
+      {
+        id: user.id,
+        user_id: user.user_id,
+        first_name: user.first_name,
+        is_profile_complete: isProfileComplete,
+      },
+      JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    return res.json({
+      success: true,
+      token,
+      isProfileComplete,
+      is_profile_complete: isProfileComplete,
+      user: {
+        ...user,
+        is_profile_complete: isProfileComplete,
+      },
+    });
+  } catch (err) {
+    console.error("Telegram WebApp auth error:", err);
+    return res.status(500).json({ error: "Telegram WebApp orqali kirishda xatolik yuz berdi" });
+  }
+};
+
+/**
  * 3. Express Auth Middleware
  */
 export const authenticateToken = (req, res, next) => {

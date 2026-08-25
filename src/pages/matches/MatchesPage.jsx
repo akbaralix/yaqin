@@ -379,7 +379,7 @@ function MatchesPage() {
         <div className="modal-overlay">
           <div className="delete-chat-modal">
             <h2>Ushbu chatni rostan ham o'chirmoqchimisiz?</h2>
-
+            <p>Chat tarixi butunlay o'chirilib tashlanadi.</p>
             <div className="delete-chat-buton">
               <button
                 onClick={handleDeleteChat}

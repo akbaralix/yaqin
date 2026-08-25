@@ -390,11 +390,7 @@ function CompleteProfile() {
               <IoArrowBackOutline />
             </button>
 
-            <button
-              type="submit"
-              className="submit-btn"
-              disabled={loading || selectedInterests.length < 3}
-            >
+            <button type="submit" className="submit-btn" disabled={loading}>
               {loading ? "Saqlanmoqda..." : "Saqlash va Boshlash 🚀"}
             </button>
           </div>

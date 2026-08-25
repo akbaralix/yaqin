@@ -20,9 +20,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [activeMatch, setActiveMatch] = useState(null);
 
-  // Sync token from localStorage or prop change
+  // Sync token from localStorage or prop change or Telegram WebApp
   useEffect(() => {
     async function initAuth() {
+      const tg = typeof window !== "undefined" ? window.Telegram?.WebApp : null;
+      const tgUser = tg?.initDataUnsafe?.user;
+
       const storedToken = localStorage.getItem("token");
       if (storedToken) {
         try {
@@ -57,6 +60,37 @@ export function AuthProvider({ children }) {
           setToken(null);
           setUser(null);
           setIsProfileComplete(false);
+        }
+      } else if (tgUser && tgUser.id) {
+        // Agar token yo'q bo'lsa, lekin foydalanuvchi Telegram WebApp orqali ochgan bo'lsa
+        try {
+          tg.ready();
+          tg.expand?.();
+
+          const data = await api.telegramWebAppAuth({
+            id: tgUser.id,
+            first_name: tgUser.first_name,
+            last_name: tgUser.last_name,
+            username: tgUser.username,
+            photo_url: tgUser.photo_url,
+          });
+
+          if (data?.token) {
+            localStorage.setItem("token", data.token);
+            setToken(data.token);
+            const isComplete = Boolean(
+              data.is_profile_complete ||
+              data.isProfileComplete ||
+              data.user?.is_profile_complete ||
+              (data.user?.gender &&
+                data.user?.region &&
+                (data.user?.birth_date || data.user?.age))
+            );
+            setIsProfileComplete(isComplete);
+            setUser(data.user);
+          }
+        } catch (tgErr) {
+          console.error("Telegram WebApp avto-login xatolik:", tgErr);
         }
       } else {
         setToken(null);
