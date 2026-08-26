@@ -852,36 +852,94 @@ export const dbStore = {
       const u1 = Number(userId1);
       const u2 = Number(userId2);
 
-      const { data: messages, error } = await supabase
-        .from("messages")
-        .select("*")
-        .or(
-          `and(sender_id.eq.${u1},receiver_id.eq.${u2}),and(sender_id.eq.${u2},receiver_id.eq.${u1})`,
-        )
-        .order("created_at", { ascending: true });
+      let query = supabase.from("messages").select("*");
+
+      // Agar userId2 === 1 bo'lsa (Umumiy Guruh Chati)
+      if (u2 === 1) {
+        query = query.eq("receiver_id", 1).order("created_at", { ascending: true }).limit(100);
+      } else {
+        query = query
+          .or(
+            `and(sender_id.eq.${u1},receiver_id.eq.${u2}),and(sender_id.eq.${u2},receiver_id.eq.${u1})`,
+          )
+          .order("created_at", { ascending: true });
+      }
+
+      const { data: rawMessages, error } = await query;
 
       if (error) {
         console.warn("getChatMessages error:", error.message);
         return [];
       }
-      return messages || [];
+
+      if (!rawMessages || rawMessages.length === 0) return [];
+
+      // Guruh yoki shaxsiy chatdagi foydalanuvchilar ma'lumotlarini olish
+      const senderIds = [...new Set(rawMessages.map((m) => Number(m.sender_id)))];
+      const { data: senders } = await supabase
+        .from("users")
+        .select("user_id, first_name, username, profile_pic, profile_sticker, gender")
+        .in("user_id", senderIds);
+
+      const senderMap = new Map(
+        (senders || []).map((s) => [String(s.user_id), s]),
+      );
+
+      return rawMessages.map((m) => {
+        const sender = senderMap.get(String(m.sender_id));
+        let text = m.text;
+        let reply_to = null;
+        let sticker = null;
+
+        // Structured JSON tekshiruvi (reply, sticker, text uchun)
+        if (text && typeof text === "string" && text.startsWith("{") && text.endsWith("}")) {
+          try {
+            const parsed = JSON.parse(text);
+            text = parsed.text || "";
+            reply_to = parsed.reply_to || null;
+            sticker = parsed.sticker || null;
+          } catch (e) {
+            // oddiy matn deb davom etadi
+          }
+        }
+
+        return {
+          ...m,
+          text,
+          reply_to,
+          sticker,
+          raw_text: m.text,
+          sender_name: sender?.first_name || "Foydalanuvchi",
+          sender_pic: sender?.profile_pic || null,
+          sender_username: sender?.username || null,
+          sender_gender: sender?.gender || null,
+          sender_sticker: sender?.profile_sticker || null,
+        };
+      });
     } catch (err) {
       console.error("getChatMessages exception:", err);
       return [];
     }
   },
 
-  async sendMessage(senderId, receiverId, text) {
+  async sendMessage(senderId, receiverId, payload) {
     try {
       const cleanSender = Number(senderId);
       const cleanReceiver = Number(receiverId);
+
+      let textToSave = "";
+      if (typeof payload === "object" && payload !== null) {
+        textToSave = JSON.stringify(payload);
+      } else {
+        textToSave = String(payload).trim();
+      }
 
       const { data: message, error } = await supabase
         .from("messages")
         .insert({
           sender_id: cleanSender,
           receiver_id: cleanReceiver,
-          text: text.trim(),
+          text: textToSave,
           is_read: false,
           created_at: new Date().toISOString(),
         })
@@ -892,7 +950,34 @@ export const dbStore = {
         console.error("sendMessage error:", error.message);
         throw error;
       }
-      return message;
+
+      // Sender ma'lumotlarini qo'shib qaytarish
+      const sender = await this.findUser(cleanSender);
+      let text = message.text;
+      let reply_to = null;
+      let sticker = null;
+
+      if (text && typeof text === "string" && text.startsWith("{") && text.endsWith("}")) {
+        try {
+          const parsed = JSON.parse(text);
+          text = parsed.text || "";
+          reply_to = parsed.reply_to || null;
+          sticker = parsed.sticker || null;
+        } catch (e) {}
+      }
+
+      return {
+        ...message,
+        text,
+        reply_to,
+        sticker,
+        raw_text: message.text,
+        sender_name: sender?.first_name || "Foydalanuvchi",
+        sender_pic: sender?.profile_pic || null,
+        sender_username: sender?.username || null,
+        sender_gender: sender?.gender || null,
+        sender_sticker: sender?.profile_sticker || null,
+      };
     } catch (err) {
       console.error("sendMessage exception:", err);
       throw err;

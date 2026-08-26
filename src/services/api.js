@@ -145,11 +145,16 @@ export const api = {
   // Realtime Chat Messages
   getChatMessages: (partnerId) => request(`/api/messages/${partnerId}`),
 
-  sendMessage: (partnerId, text) =>
-    request(`/api/messages/${partnerId}`, {
+  sendMessage: (partnerId, payload) => {
+    const body =
+      typeof payload === "string"
+        ? { text: payload }
+        : payload;
+    return request(`/api/messages/${partnerId}`, {
       method: "POST",
-      body: JSON.stringify({ text }),
-    }),
+      body: JSON.stringify(body),
+    });
+  },
 
   deleteMatch: (matchId) =>
     request(`/api/dating/matches/${matchId}`, {

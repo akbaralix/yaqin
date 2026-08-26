@@ -42,7 +42,7 @@ function BottomNav({ onOpenCreatePost }) {
         }
       >
         <RiMessengerLine className="bottom-nav-icon" />
-        <span>Matchlar</span>
+        <span>Suhbatlar</span>
       </NavLink>
 
       <NavLink

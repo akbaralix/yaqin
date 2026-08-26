@@ -50,7 +50,7 @@ function Sidebar({ onOpenCreatePost }) {
           className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
         >
           <RiMessengerLine className="nav-icon" />
-          <span>Matchlarim</span>
+          <span>Suhbatlar</span>
         </NavLink>
 
         <NavLink

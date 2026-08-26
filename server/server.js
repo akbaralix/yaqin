@@ -662,15 +662,24 @@ app.post("/api/messages/:partnerId", authenticateToken, async (req, res) => {
   try {
     const currentUserId = req.user.user_id;
     const partnerId = req.params.partnerId;
-    const { text } = req.body;
+    const { text, reply_to, sticker } = req.body;
 
-    if (!text || !text.trim()) {
-      return res
-        .status(400)
-        .json({ error: "Xabar matni bo'sh bo'lishi mumkin emas" });
+    let payload = text;
+    if (reply_to || sticker || typeof text === "object") {
+      payload = {
+        text: text || "",
+        reply_to: reply_to || null,
+        sticker: sticker || null,
+      };
     }
 
-    const message = await dbStore.sendMessage(currentUserId, partnerId, text);
+    if (!payload || (typeof payload === "string" && !payload.trim()) || (typeof payload === "object" && !payload.text && !payload.sticker)) {
+      return res
+        .status(400)
+        .json({ error: "Xabar matni yoki stiker bo'sh bo'lishi mumkin emas" });
+    }
+
+    const message = await dbStore.sendMessage(currentUserId, partnerId, payload);
 
     return res.status(201).json({
       success: true,
