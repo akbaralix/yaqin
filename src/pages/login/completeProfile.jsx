@@ -139,7 +139,10 @@ function CompleteProfile() {
       toast.error("Ismingizni kiriting!");
       return;
     }
-
+    if (formData.firstName.length < 3 || formData.firstName.length > 25) {
+      toast.error("Ism 3 tadan 25 tagacha harfdan iborat bo'lishi kerak");
+      return;
+    }
     if (!formData.birthDate) {
       toast.error("Tug'ilgan sanangizni tanlang!");
       return;

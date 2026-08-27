@@ -29,7 +29,7 @@ const GLOBAL_GROUP_USER = {
   first_name: "Yaqin Umumiy Guruh",
   username: "yaqin_group",
   is_group: true,
-  profile_pic: "public/icon.png",
+  profile_pic: "/icon.png",
   bio: "Barcha foydalanuvchilar bilan jonli guruh suhbati",
   region: "O'zbekiston",
 };
@@ -220,7 +220,6 @@ function MatchesPage() {
     const handleIncomingMessage = (newMsg) => {
       if (!newMsg) return;
 
-      // Check if message is from myself (optimistically added)
       const isFromMe = String(newMsg.sender_id) === String(myId);
 
       let parsedText = newMsg.text;
@@ -288,30 +287,14 @@ function MatchesPage() {
       }
 
       setMessages((prev) => {
-        // Agar bu xabar ID bo'yicha allaqachon mavjud bo'lsa
+        // Agar o'zimiz yuborgan bo'lsak va allaqachon qo'shilgan bo'lsa
+        if (isFromMe) return prev;
         if (prev.some((m) => m.id === newMsg.id)) return prev;
-
-        // Agar bu o'zimiz yuborgan xabar bo'lsa va temp xabar bor bo'lsa, tempni yangisiga almashtirish
-        if (isFromMe) {
-          const hasTemp = prev.some((m) => m.is_temp);
-          if (hasTemp) {
-            let replaced = false;
-            return prev.map((m) => {
-              if (m.is_temp && !replaced) {
-                replaced = true;
-                return formattedMsg;
-              }
-              return m;
-            });
-          }
-        }
-
         return [...prev, formattedMsg];
       });
     };
 
     channel.on("broadcast", { event: "new_message" }, ({ payload }) => {
-      // Broadcast faqat boshqa foydalanuvchilar uchun (biz o'zimiz allaqachon qo'shganmiz)
       if (String(payload.sender_id) !== String(myId)) {
         handleIncomingMessage(payload);
       }
@@ -327,6 +310,9 @@ function MatchesPage() {
       (payload) => {
         const newMsg = payload.new;
         if (!newMsg) return;
+
+        // O'zimiz yuborgan xabar bazaga tushganda qayta listenerdan olib qo'shmaymiz
+        if (String(newMsg.sender_id) === String(myId)) return;
 
         if (isGroupChat) {
           if (Number(newMsg.receiver_id) === 1) {
@@ -658,7 +644,7 @@ function MatchesPage() {
             onClick={() => setActiveTab("group")}
           >
             <FaUsers />
-            <span>Umumiy Guruh</span>
+            <span>Guruh</span>
             {groupUnreadCount > 0 && (
               <span
                 className="tg-unread-badge"
@@ -1094,7 +1080,6 @@ function MatchesPage() {
                   }
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
-                  autoFocus
                 />
 
                 <button

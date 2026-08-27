@@ -670,6 +670,10 @@ body {
   font-size: 15px;
   font-weight: 700;
   color: var(--text-main);
+  white-space: nowrap; /* Matnni yangi qatorga o'tkazmaydi */
+  overflow: hidden; /* Sig'magan qismini yashiradi */
+  text-overflow: ellipsis; /* Yashiringan matn o'rniga "..." qo'yadi */
+  max-width: 150px;
 }
 
 .post-author-age {
@@ -1388,7 +1392,13 @@ input[type="number"]::-webkit-inner-spin-button {
   margin-top: 6px;
   margin-bottom: 24px;
 }
-
+.match-subtitle b {
+  white-space: nowrap; /* Matnni yangi qatorga o'tkazmaydi */
+  overflow: hidden; /* Sig'magan qismini yashiradi */
+  text-overflow: ellipsis; /* Yashiringan matn o'rniga "..." qo'yadi */
+  max-width: 200px;
+  overflow: hidden;
+}
 .match-avatars-row {
   display: flex;
   align-items: center;
@@ -2181,6 +2191,10 @@ input[type="number"]::-webkit-inner-spin-button {
   font-weight: 700;
   display: block;
   margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Yashiringan matn o'rniga "..." qo'yadi */
+  max-width: 200px;
 }
 
 .comment-time {
@@ -2579,7 +2593,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 /* Group Chat Banner Card */
 .group-chat-banner-card {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+  background: linear-gradient(135deg, #6366f1 0%, #7142e0 50%, #723ddd 100%);
   border-radius: var(--radius-lg);
   padding: 24px;
   color: #fff;
@@ -4127,5 +4141,9 @@ input[type="number"]::-webkit-inner-spin-button {
   .loader-pulse {
     width: 40px;
     height: 40px;
+  }
+  .chat-tab-btn {
+    font-size: 13px;
+    font-weight: 500;
   }
 }
