@@ -2591,7 +2591,6 @@ input[type="number"]::-webkit-inner-spin-button {
   background: var(--accent-pink);
 }
 
-/* Group Chat Banner Card */
 .group-chat-banner-card {
   background: linear-gradient(135deg, #6366f1 0%, #7142e0 50%, #723ddd 100%);
   border-radius: var(--radius-lg);
@@ -2865,6 +2864,11 @@ input[type="number"]::-webkit-inner-spin-button {
   color: #3730a3 !important;
   text-align: center;
 }
+.match-start-notice {
+  background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%) !important;
+  padding: 12px;
+  font-size: 14px;
+}
 
 .telegram-message-row {
   display: flex;
@@ -3127,7 +3131,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .chat-input-form input {
   flex: 1;
-  padding: 10px 16px;
+  padding: 10px 15px;
   border-radius: 20px;
   border: 1px solid #e2e8f0;
   font-size: 13px;

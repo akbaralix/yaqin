@@ -856,7 +856,9 @@ export const dbStore = {
 
       // Agar userId2 === 1 bo'lsa (Umumiy Guruh Chati)
       if (u2 === 1) {
-        query = query.eq("receiver_id", 1).order("created_at", { ascending: true }).limit(100);
+        query = query
+          .eq("receiver_id", 1)
+          .order("created_at", { ascending: true });
       } else {
         query = query
           .or(
@@ -875,10 +877,14 @@ export const dbStore = {
       if (!rawMessages || rawMessages.length === 0) return [];
 
       // Guruh yoki shaxsiy chatdagi foydalanuvchilar ma'lumotlarini olish
-      const senderIds = [...new Set(rawMessages.map((m) => Number(m.sender_id)))];
+      const senderIds = [
+        ...new Set(rawMessages.map((m) => Number(m.sender_id))),
+      ];
       const { data: senders } = await supabase
         .from("users")
-        .select("user_id, first_name, username, profile_pic, profile_sticker, gender")
+        .select(
+          "user_id, first_name, username, profile_pic, profile_sticker, gender",
+        )
         .in("user_id", senderIds);
 
       const senderMap = new Map(
@@ -892,7 +898,12 @@ export const dbStore = {
         let sticker = null;
 
         // Structured JSON tekshiruvi (reply, sticker, text uchun)
-        if (text && typeof text === "string" && text.startsWith("{") && text.endsWith("}")) {
+        if (
+          text &&
+          typeof text === "string" &&
+          text.startsWith("{") &&
+          text.endsWith("}")
+        ) {
           try {
             const parsed = JSON.parse(text);
             text = parsed.text || "";
@@ -957,7 +968,12 @@ export const dbStore = {
       let reply_to = null;
       let sticker = null;
 
-      if (text && typeof text === "string" && text.startsWith("{") && text.endsWith("}")) {
+      if (
+        text &&
+        typeof text === "string" &&
+        text.startsWith("{") &&
+        text.endsWith("}")
+      ) {
         try {
           const parsed = JSON.parse(text);
           text = parsed.text || "";

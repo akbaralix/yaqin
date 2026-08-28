@@ -877,27 +877,37 @@ function MatchesPage() {
 
             {/* 2. Messages Body */}
             <div className="chat-messages-body" ref={messagesContainerRef}>
-              {chatUser.is_group || Number(chatUser.user_id) === 1 ? (
-                <div className="match-start-notice group-welcome-notice">
-                  🌟 <b>Yaqin Umumiy Guruhiga xush kelibsiz!</b>
-                  <p>
-                    Bu yerda barcha foydalanuvchilar fikr almashishi, stikerlar
-                    yuborishi va reply qilishi mumkin.
-                  </p>
-                </div>
-              ) : (
-                <div className="match-start-notice">
-                  🎉 Siz va <b>{chatUser.first_name}</b> bir-biringizga
-                  yoqdingiz! Suhbatni birinchi bo'lib boshlang.
-                </div>
-              )}
+              {messages.length === 0 &&
+                (chatUser.is_group || Number(chatUser.user_id) === 1 ? (
+                  <div className="match-start-notice group-welcome-notice">
+                    🌟 <b>Yaqin Umumiy Guruhiga xush kelibsiz!</b>
+                    <p>
+                      Bu yerda barcha foydalanuvchilar fikr almashishi,
+                      stikerlar yuborishi va reply qilishi mumkin.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="match-start-notice">
+                    🎉 Siz va <b>{chatUser.first_name}</b> bir-biringizga
+                    yoqdingiz! Suhbatni birinchi bo'lib boshlang.
+                  </div>
+                ))}
+
+              {/* Xabarlar ro'yxati va yuklanish steyti shu yerdan davom etadi... */}
 
               {loadingChat ? (
                 <div className="matches-loading" style={{ minHeight: "150px" }}>
                   <FaSpinner className="spinner-anim" />
                 </div>
               ) : messages.length === 0 ? (
-                <div className="no-comments" style={{ padding: "30px 10px" }}>
+                <div
+                  className="no-comments"
+                  style={{
+                    textAlign: "center",
+                    marginTop: 100 + 20,
+                    padding: "30px 10px",
+                  }}
+                >
                   <p>Hali xabarlar yo'q.</p>
                   <span>Salom deb birinchi qadamni qo'ying! 👋</span>
                 </div>
