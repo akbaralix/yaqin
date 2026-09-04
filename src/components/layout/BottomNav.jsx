@@ -38,20 +38,15 @@ function BottomNav({ onOpenCreatePost, onOpenNotifications }) {
         <FaPlus />
       </button>
 
-      {/* Mobile Notifications Tab Button */}
-      <button
-        type="button"
-        className="bottom-nav-item bottom-notif-btn"
-        onClick={onOpenNotifications}
+      <NavLink
+        to="/matches"
+        className={({ isActive }) =>
+          `bottom-nav-item ${isActive ? "active" : ""}`
+        }
       >
-        <div className="bottom-nav-icon-wrapper">
-          <FaRegHeart className="bottom-nav-icon" />
-          {unreadCount > 0 && (
-            <span className="bottom-notif-badge">{unreadCount}</span>
-          )}
-        </div>
-        <span>Xabarlar</span>
-      </button>
+        <RiMessengerLine className="bottom-nav-icon" />
+        <span>Suhbatlar</span>
+      </NavLink>
 
       <NavLink
         to="/profile"

@@ -418,7 +418,6 @@ export const dbStore = {
         );
       }
 
-      // 2. RECOMMENDATION ALGORITHM SCORING
       if (!authorUserId && currentUser) {
         enriched = enriched.map((item) => {
           let score = 50;
@@ -481,10 +480,29 @@ export const dbStore = {
         );
       }
 
-      return enriched;
+      const totalCount = enriched.length;
+      const numLimit = options.limit ? parseInt(options.limit, 10) : 0;
+      const numPage = options.page ? parseInt(options.page, 10) : 1;
+
+      let paginated = enriched;
+      let hasMore = false;
+
+      if (numLimit > 0) {
+        const startIndex = (numPage - 1) * numLimit;
+        paginated = enriched.slice(startIndex, startIndex + numLimit);
+        hasMore = startIndex + numLimit < totalCount;
+      }
+
+      return {
+        posts: paginated,
+        total: totalCount,
+        page: numPage,
+        limit: numLimit || totalCount,
+        hasMore,
+      };
     } catch (err) {
       console.error("getPosts exception:", err);
-      return [];
+      return { posts: [], total: 0, page: 1, limit: 15, hasMore: false };
     }
   },
 

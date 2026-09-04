@@ -433,7 +433,8 @@ app.get("/api/user/:identifier", optionalAuth, async (req, res) => {
       await dbStore.recordProfileView(viewerId, user.user_id);
     }
 
-    const posts = await dbStore.getPosts({ authorUserId: user.user_id });
+    const postsResult = await dbStore.getPosts({ authorUserId: user.user_id });
+    const userPosts = Array.isArray(postsResult) ? postsResult : (postsResult.posts || []);
     const analytics = await dbStore.getUserAnalytics(user.user_id);
     let isFollowing = false;
     if (viewerId) {
@@ -447,13 +448,13 @@ app.get("/api/user/:identifier", optionalAuth, async (req, res) => {
         stats: {
           viewsCount: analytics?.viewsCount || 0,
           totalLikesReceived: analytics?.totalLikesReceived || 0,
-          totalPosts: posts.length,
+          totalPosts: postsResult.total ?? userPosts.length,
           totalMatches: analytics?.totalMatches || 0,
           followersCount: analytics?.followersCount || 0,
           followingCount: analytics?.followingCount || 0,
         },
       },
-      posts,
+      posts: userPosts,
       isFollowing,
     });
   } catch (err) {
@@ -464,14 +465,14 @@ app.get("/api/user/:identifier", optionalAuth, async (req, res) => {
 
 // --- 5. POSTS & FEED (Requirements 2 & 3) ---
 
-// Feed with filters and Smart Recommendation
+// Feed with filters, Smart Recommendation and Infinite Scroll pagination
 app.get("/api/posts", optionalAuth, async (req, res) => {
   try {
-    const { region, gender, ageMin, ageMax, interest, search, userId } =
+    const { region, gender, ageMin, ageMax, interest, search, userId, page = 1, limit = 15 } =
       req.query;
     const currentUserId = req.user?.user_id;
 
-    const posts = await dbStore.getPosts({
+    const result = await dbStore.getPosts({
       currentUserId,
       region,
       gender,
@@ -480,12 +481,18 @@ app.get("/api/posts", optionalAuth, async (req, res) => {
       interest,
       search,
       authorUserId: userId,
+      page: parseInt(page, 10) || 1,
+      limit: parseInt(limit, 10) || 15,
     });
 
     return res.json({
       success: true,
-      posts,
-      count: posts.length,
+      posts: result.posts || [],
+      total: result.total || 0,
+      page: result.page || 1,
+      limit: result.limit || 15,
+      hasMore: Boolean(result.hasMore),
+      count: (result.posts || []).length,
     });
   } catch (err) {
     console.error("Get posts feed error:", err);

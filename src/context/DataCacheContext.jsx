@@ -13,6 +13,9 @@ export function DataCacheProvider({ children }) {
   // ---- Feed (HomePage) ----
   const [feedPosts, setFeedPosts] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
+  const [feedLoadingMore, setFeedLoadingMore] = useState(false);
+  const [feedHasMore, setFeedHasMore] = useState(true);
+  const [feedPage, setFeedPage] = useState(1);
   const feedLoaded = useRef(false);
   const feedFilterKey = useRef("");
 
@@ -36,9 +39,11 @@ export function DataCacheProvider({ children }) {
       }
       setFeedLoading(true);
       try {
-        const res = await api.getPosts(feedFilters);
+        const res = await api.getPosts({ ...feedFilters, page: 1, limit: 15 });
         if (res?.posts) {
           setFeedPosts(res.posts);
+          setFeedPage(1);
+          setFeedHasMore(res.hasMore ?? res.posts.length === 15);
           feedLoaded.current = true;
           feedFilterKey.current = currentKey;
         }
@@ -51,9 +56,41 @@ export function DataCacheProvider({ children }) {
     [feedFilters],
   );
 
+  const loadMoreFeedPosts = useCallback(async () => {
+    if (feedLoading || feedLoadingMore || !feedHasMore) return;
+
+    setFeedLoadingMore(true);
+    const nextPage = feedPage + 1;
+    try {
+      const res = await api.getPosts({
+        ...feedFilters,
+        page: nextPage,
+        limit: 15,
+      });
+
+      if (res?.posts && res.posts.length > 0) {
+        setFeedPosts((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const newUnique = res.posts.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...newUnique];
+        });
+        setFeedPage(nextPage);
+        setFeedHasMore(res.hasMore ?? res.posts.length === 15);
+      } else {
+        setFeedHasMore(false);
+      }
+    } catch (err) {
+      console.warn("Failed to load more feed posts:", err);
+    } finally {
+      setFeedLoadingMore(false);
+    }
+  }, [feedFilters, feedPage, feedLoading, feedLoadingMore, feedHasMore]);
+
   const updateFeedFilters = useCallback((newFilters) => {
     setFeedFilters((prev) => ({ ...prev, ...newFilters }));
     feedLoaded.current = false;
+    setFeedPage(1);
+    setFeedHasMore(true);
   }, []);
 
   const resetFeedFilters = useCallback(() => {
@@ -65,6 +102,8 @@ export function DataCacheProvider({ children }) {
       search: "",
     });
     feedLoaded.current = false;
+    setFeedPage(1);
+    setFeedHasMore(true);
   }, []);
 
   // ---- Dating (DatingPage) ----
@@ -229,8 +268,11 @@ export function DataCacheProvider({ children }) {
         // Feed
         feedPosts,
         feedLoading,
+        feedLoadingMore,
+        feedHasMore,
         feedFilters,
         loadFeedPosts,
+        loadMoreFeedPosts,
         updateFeedFilters,
         resetFeedFilters,
         handleFeedLikeToggled,

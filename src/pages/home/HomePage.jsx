@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import FilterBar from "../../components/feed/FilterBar";
 import PostCard from "../../components/feed/PostCard";
 import CommentsModal from "../../components/feed/CommentsModal";
@@ -9,8 +9,11 @@ function HomePage({ onOpenCreatePost }) {
   const {
     feedPosts,
     feedLoading,
+    feedLoadingMore,
+    feedHasMore,
     feedFilters,
     loadFeedPosts,
+    loadMoreFeedPosts,
     updateFeedFilters,
     resetFeedFilters,
     handleFeedLikeToggled,
@@ -18,11 +21,36 @@ function HomePage({ onOpenCreatePost }) {
   } = useDataCache();
 
   const [activeCommentsPost, setActiveCommentsPost] = useState(null);
+  const bottomObserverRef = useRef(null);
 
   // Sahifa ochilganda kesh bo'lsa yuklamaydi, yo'q bo'lsa yuklaydi
   useEffect(() => {
     loadFeedPosts();
   }, [loadFeedPosts]);
+
+  // Instagram-style Infinite Scroll via IntersectionObserver
+  useEffect(() => {
+    const observerTarget = bottomObserverRef.current;
+    if (!observerTarget) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && feedHasMore && !feedLoading && !feedLoadingMore) {
+          loadMoreFeedPosts();
+        }
+      },
+      {
+        rootMargin: "300px", // Foydalanuvchi pastga yetmasidan oldinroq keyingi 15 tani yuklash
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(observerTarget);
+
+    return () => {
+      if (observerTarget) observer.unobserve(observerTarget);
+    };
+  }, [feedHasMore, feedLoading, feedLoadingMore, loadMoreFeedPosts]);
 
   return (
     <div className="home-page-container">
@@ -57,14 +85,35 @@ function HomePage({ onOpenCreatePost }) {
             </div>
           </div>
         ) : (
-          feedPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onOpenComments={(p) => setActiveCommentsPost(p)}
-              onLikeToggled={handleFeedLikeToggled}
-            />
-          ))
+          <>
+            {feedPosts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onOpenComments={(p) => setActiveCommentsPost(p)}
+                onLikeToggled={handleFeedLikeToggled}
+              />
+            ))}
+
+            {/* Bottom loader & Infinite Scroll Trigger */}
+            <div
+              ref={bottomObserverRef}
+              className="feed-bottom-trigger"
+              style={{ padding: "20px 0", textAlign: "center" }}
+            >
+              {feedLoadingMore && (
+                <div className="feed-loading-more">
+                  <FaSpinner className="spinner-anim" />
+                  <span>Keyingi postlar yuklanmoqda...</span>
+                </div>
+              )}
+              {!feedHasMore && feedPosts.length > 0 && (
+                <div className="feed-end-message" style={{ color: "var(--text-muted)", fontSize: "0.85rem", padding: "16px 0" }}>
+                  🎉 Barcha yangi postlarni ko'rib bo'ldingiz!
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
 

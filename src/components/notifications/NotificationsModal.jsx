@@ -137,8 +137,7 @@ function NotificationsModal({ isOpen, onClose }) {
               return (
                 <div
                   key={notif.id}
-                  className={
-otif-item }
+                  className={`notif-item ${!notif.is_read ? "unread" : ""}`}
                   onClick={() => {
                     if (!notif.is_read) markAsRead(notif.id);
                   }}
