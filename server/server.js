@@ -797,6 +797,49 @@ app.post("/api/messages/:partnerId", authenticateToken, async (req, res) => {
   }
 });
 
+// --- 8. NOTIFICATIONS (Bildirishnomalar) ---
+app.get("/api/notifications", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const notifications = await dbStore.getNotifications(userId);
+    const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+    return res.json({
+      success: true,
+      notifications,
+      unreadCount,
+    });
+  } catch (err) {
+    console.error("Get notifications error:", err);
+    return res.status(500).json({ error: "Bildirishnomalarni yuklashda xatolik" });
+  }
+});
+
+app.post("/api/notifications/read", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    await dbStore.markNotificationsAsRead(userId);
+
+    return res.json({ success: true, message: "Barcha bildirishnomalar o'qildi" });
+  } catch (err) {
+    console.error("Mark notifications read error:", err);
+    return res.status(500).json({ error: "Xatolik yuz berdi" });
+  }
+});
+
+app.post("/api/notifications/:id/read", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const notifId = req.params.id;
+    await dbStore.markSingleNotificationAsRead(notifId, userId);
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("Mark single notification read error:", err);
+    return res.status(500).json({ error: "Xatolik yuz berdi" });
+  }
+});
+
 // Serve static frontend assets and SPA routes if dist folder exists
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));

@@ -7,12 +7,15 @@ import {
   FaPlusCircle,
   FaSignOutAlt,
   FaFire,
+  FaRegHeart,
 } from "react-icons/fa";
 import { RiMessengerLine } from "react-icons/ri";
 import { useAuth } from "../../context/AuthContext";
+import { useNotifications } from "../../context/NotificationContext";
 
-function Sidebar({ onOpenCreatePost }) {
+function Sidebar({ onOpenCreatePost, onOpenNotifications }) {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
 
   return (
     <aside className="app-sidebar">
@@ -52,6 +55,21 @@ function Sidebar({ onOpenCreatePost }) {
           <RiMessengerLine className="nav-icon" />
           <span>Suhbatlar</span>
         </NavLink>
+
+        {/* Instagram-Style Bildirishnomalar Button */}
+        <button
+          type="button"
+          className="nav-item sidebar-notif-btn"
+          onClick={onOpenNotifications}
+        >
+          <div className="nav-icon-badge-box">
+            <FaRegHeart className="nav-icon" />
+            {unreadCount > 0 && (
+              <span className="sidebar-notif-counter-badge">{unreadCount}</span>
+            )}
+          </div>
+          <span>Bildirishnomalar</span>
+        </button>
 
         <NavLink
           to="/profile"

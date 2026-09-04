@@ -3,7 +3,7 @@ import { FaHeart, FaComment, FaImages, FaPlus } from "react-icons/fa";
 import PostCard from "../feed/PostCard";
 import CommentsModal from "../feed/CommentsModal";
 
-function UserPostsGrid({ posts, onOpenCreatePost }) {
+function UserPostsGrid({ posts, onOpenCreatePost, isOwnProfile = false, userName = "Foydalanuvchi" }) {
   const [selectedPost, setSelectedPost] = useState(null);
   const [activeCommentsPost, setActiveCommentsPost] = useState(null);
 
@@ -13,11 +13,22 @@ function UserPostsGrid({ posts, onOpenCreatePost }) {
         <div className="empty-icon-circle">
           <FaImages />
         </div>
-        <h3>Hozircha hech qanday post yo'q</h3>
-        <p>Ilk suratlaringiz va qiziqarli lahzalaringizni boshqalar bilan ulashing!</p>
-        <button className="empty-create-post-btn" onClick={onOpenCreatePost}>
-          <FaPlus /> Birinchi postni yaratish
-        </button>
+        {isOwnProfile ? (
+          <>
+            <h3>Hozircha hech qanday post yo'q</h3>
+            <p>Ilk suratlaringiz va qiziqarli lahzalaringizni boshqalar bilan ulashing!</p>
+            {onOpenCreatePost && (
+              <button className="empty-create-post-btn" onClick={onOpenCreatePost}>
+                <FaPlus /> Birinchi postni yaratish
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <h3>Hozircha hech qanday post yo'q</h3>
+            <p>{userName} hali birorta ham post yoki surat ulashmagan.</p>
+          </>
+        )}
       </div>
     );
   }

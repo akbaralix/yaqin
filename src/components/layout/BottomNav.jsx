@@ -1,9 +1,12 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { FaCompass, FaFire, FaPlus, FaUser } from "react-icons/fa";
+import { FaCompass, FaFire, FaPlus, FaUser, FaRegHeart } from "react-icons/fa";
 import { RiMessengerLine } from "react-icons/ri";
+import { useNotifications } from "../../context/NotificationContext";
 
-function BottomNav({ onOpenCreatePost }) {
+function BottomNav({ onOpenCreatePost, onOpenNotifications }) {
+  const { unreadCount } = useNotifications();
+
   return (
     <div className="app-bottom-nav">
       <NavLink
@@ -35,15 +38,20 @@ function BottomNav({ onOpenCreatePost }) {
         <FaPlus />
       </button>
 
-      <NavLink
-        to="/matches"
-        className={({ isActive }) =>
-          `bottom-nav-item ${isActive ? "active" : ""}`
-        }
+      {/* Mobile Notifications Tab Button */}
+      <button
+        type="button"
+        className="bottom-nav-item bottom-notif-btn"
+        onClick={onOpenNotifications}
       >
-        <RiMessengerLine className="bottom-nav-icon" />
-        <span>Suhbatlar</span>
-      </NavLink>
+        <div className="bottom-nav-icon-wrapper">
+          <FaRegHeart className="bottom-nav-icon" />
+          {unreadCount > 0 && (
+            <span className="bottom-notif-badge">{unreadCount}</span>
+          )}
+        </div>
+        <span>Xabarlar</span>
+      </button>
 
       <NavLink
         to="/profile"

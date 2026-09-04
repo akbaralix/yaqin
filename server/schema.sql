@@ -120,6 +120,18 @@ CREATE TABLE IF NOT EXISTS public.user_follows (
     UNIQUE(follower_id, following_id)
 );
 
+-- 11. NOTIFICATIONS (Bildirishnomalar) TABLE
+CREATE TABLE IF NOT EXISTS public.notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    recipient_id BIGINT NOT NULL REFERENCES public.users(user_id) ON DELETE CASCADE,
+    sender_id BIGINT NOT NULL REFERENCES public.users(user_id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('like_post', 'comment_post', 'follow', 'dating_like', 'dating_match')),
+    post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE,
+    text TEXT DEFAULT '',
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- INDEXES FOR MAXIMUM QUERY PERFORMANCE
 CREATE INDEX IF NOT EXISTS idx_posts_user_id ON public.posts(user_id);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON public.posts(created_at DESC);
@@ -136,6 +148,8 @@ CREATE INDEX IF NOT EXISTS idx_messages_receiver ON public.messages(receiver_id)
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages(created_at ASC);
 CREATE INDEX IF NOT EXISTS idx_user_follows_follower ON public.user_follows(follower_id);
 CREATE INDEX IF NOT EXISTS idx_user_follows_following ON public.user_follows(following_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON public.notifications(recipient_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON public.notifications(created_at DESC);
 
 -- ENABLE ROW LEVEL SECURITY
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
@@ -148,9 +162,11 @@ ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profile_views ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_follows ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
--- ENABLE REALTIME PUBLICATION FOR MESSAGES TABLE
+-- ENABLE REALTIME PUBLICATION FOR MESSAGES & NOTIFICATIONS TABLE
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 
 -- POLICIES FOR PUBLIC / SERVICE ROLE / AUTHENTICATED
 DO $$
@@ -184,5 +200,8 @@ BEGIN
 
     DROP POLICY IF EXISTS "Public User Follows" ON public.user_follows;
     CREATE POLICY "Public User Follows" ON public.user_follows FOR ALL USING (true) WITH CHECK (true);
+
+    DROP POLICY IF EXISTS "Public Notifications" ON public.notifications;
+    CREATE POLICY "Public Notifications" ON public.notifications FOR ALL USING (true) WITH CHECK (true);
 END
 $$;

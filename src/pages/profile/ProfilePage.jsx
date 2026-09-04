@@ -154,6 +154,8 @@ function ProfilePage({ onOpenCreatePost }) {
           <UserPostsGrid
             posts={userPosts}
             onOpenCreatePost={isOwnProfile ? onOpenCreatePost : undefined}
+            isOwnProfile={isOwnProfile}
+            userName={targetUser?.first_name || (targetUser?.username ? `@${targetUser.username}` : "Foydalanuvchi")}
           />
         ) : isOwnProfile ? (
           <ProfileAnalytics />

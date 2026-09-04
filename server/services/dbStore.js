@@ -138,6 +138,14 @@ export const dbStore = {
           created_at: new Date().toISOString(),
         });
         isFollowing = true;
+
+        // Obuna bo'lingan foydalanuvchiga bildirishnoma
+        await this.createNotification({
+          recipient_id: tId,
+          sender_id: fId,
+          type: "follow",
+          text: "sizga obuna bo'ldi ➕",
+        });
       }
 
       // Yangi followers va following sonini olish
@@ -552,6 +560,23 @@ export const dbStore = {
           created_at: new Date().toISOString(),
         });
         hasLiked = true;
+
+        // Post muallifiga bildirishnoma yuborish
+        const { data: postItem } = await supabase
+          .from("posts")
+          .select("user_id")
+          .eq("id", postId)
+          .maybeSingle();
+
+        if (postItem && Number(postItem.user_id) !== cleanUserId) {
+          await this.createNotification({
+            recipient_id: postItem.user_id,
+            sender_id: cleanUserId,
+            type: "like_post",
+            post_id: postId,
+            text: "postingizga like bosdi ❤️",
+          });
+        }
       }
 
       // Count total likes
@@ -609,6 +634,23 @@ export const dbStore = {
           updated_at: new Date().toISOString(),
         })
         .eq("id", postId);
+
+      // Post muallifiga bildirishnoma yuborish
+      const { data: postItem } = await supabase
+        .from("posts")
+        .select("user_id")
+        .eq("id", postId)
+        .maybeSingle();
+
+      if (postItem && Number(postItem.user_id) !== cleanUserId) {
+        await this.createNotification({
+          recipient_id: postItem.user_id,
+          sender_id: cleanUserId,
+          type: "comment_post",
+          post_id: postId,
+          text: `postingizga fikr bildirdi: "${text.trim().slice(0, 40)}" 💬`,
+        });
+      }
 
       const author = await this.findUser(cleanUserId);
       return {
@@ -825,9 +867,33 @@ export const dbStore = {
               .select()
               .single();
             matchRecord = newMatch;
+
+            // O'zaro match bo'lganda ikkala tomonga bildirishnoma yuborish
+            await Promise.allSettled([
+              this.createNotification({
+                recipient_id: cleanTargetId,
+                sender_id: cleanSenderId,
+                type: "dating_match",
+                text: "siz bilan yangi juftlik (Match) hosil qildi! 🎉",
+              }),
+              this.createNotification({
+                recipient_id: cleanSenderId,
+                sender_id: cleanTargetId,
+                type: "dating_match",
+                text: "siz bilan yangi juftlik (Match) hosil qildi! 🎉",
+              }),
+            ]);
           } else {
             matchRecord = existingMatch;
           }
+        } else {
+          // Agar hali qarshi tomon like bosmagan bo'lsa ham unga bildirishnoma yuborish
+          await this.createNotification({
+            recipient_id: cleanTargetId,
+            sender_id: cleanSenderId,
+            type: "dating_like",
+            text: action === "superlike" ? "sizga Superlike yubordi! ⭐️" : "sizni yoqtirdi (Like) ❤️",
+          });
         }
       }
 
@@ -902,6 +968,141 @@ export const dbStore = {
     } catch (err) {
       console.error("getMatches exception:", err);
       return [];
+    }
+  },
+
+  // 7. NOTIFICATIONS (Bildirishnomalar)
+  async createNotification(notifData) {
+    try {
+      const { recipient_id, sender_id, type, post_id, text } = notifData;
+      if (!recipient_id || !sender_id || Number(recipient_id) === Number(sender_id)) {
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from("notifications")
+        .insert({
+          recipient_id: Number(recipient_id),
+          sender_id: Number(sender_id),
+          type,
+          post_id: post_id || null,
+          text: text || "",
+          is_read: false,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.warn("createNotification error:", error.message);
+        return null;
+      }
+      return data;
+    } catch (err) {
+      console.warn("createNotification exception:", err.message);
+      return null;
+    }
+  },
+
+  async getNotifications(userId) {
+    try {
+      const cleanUserId = Number(userId);
+      const { data: rawNotifs, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("recipient_id", cleanUserId)
+        .order("created_at", { ascending: false })
+        .limit(40);
+
+      if (error || !rawNotifs || rawNotifs.length === 0) {
+        return [];
+      }
+
+      // Senderlar ma'lumotlarini olish
+      const senderIds = [...new Set(rawNotifs.map((n) => Number(n.sender_id)))];
+      const { data: senders } = await supabase
+        .from("users")
+        .select("user_id, first_name, username, profile_pic, profile_sticker")
+        .in("user_id", senderIds);
+
+      const senderMap = new Map((senders || []).map((s) => [String(s.user_id), s]));
+
+      // Post rasmlarini olish (agar post_id bo'lsa)
+      const postIds = [
+        ...new Set(rawNotifs.filter((n) => n.post_id).map((n) => n.post_id)),
+      ];
+      let postsMap = new Map();
+      if (postIds.length > 0) {
+        const { data: posts } = await supabase
+          .from("posts")
+          .select("id, images")
+          .in("id", postIds);
+
+        postsMap = new Map((posts || []).map((p) => [String(p.id), p]));
+      }
+
+      return rawNotifs.map((n) => {
+        const sender = senderMap.get(String(n.sender_id)) || {
+          first_name: "Foydalanuvchi",
+          username: null,
+          profile_pic: null,
+        };
+
+        const post = n.post_id ? postsMap.get(String(n.post_id)) : null;
+        let postFirstImage = null;
+        if (post?.images) {
+          const imgs = Array.isArray(post.images)
+            ? post.images
+            : typeof post.images === "string"
+              ? JSON.parse(post.images || "[]")
+              : [];
+          postFirstImage = imgs[0] || null;
+        }
+
+        return {
+          ...n,
+          sender: {
+            user_id: sender.user_id,
+            first_name: sender.first_name,
+            username: sender.username,
+            profile_pic: sender.profile_pic,
+            profile_sticker: sender.profile_sticker || null,
+          },
+          post_image: postFirstImage,
+        };
+      });
+    } catch (err) {
+      console.error("getNotifications exception:", err);
+      return [];
+    }
+  },
+
+  async markNotificationsAsRead(userId) {
+    try {
+      const cleanUserId = Number(userId);
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("recipient_id", cleanUserId)
+        .eq("is_read", false);
+      return { success: true };
+    } catch (err) {
+      console.warn("markNotificationsAsRead error:", err.message);
+      return { success: false };
+    }
+  },
+
+  async markSingleNotificationAsRead(notifId, userId) {
+    try {
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("id", notifId)
+        .eq("recipient_id", Number(userId));
+      return { success: true };
+    } catch (err) {
+      console.warn("markSingleNotificationAsRead error:", err.message);
+      return { success: false };
     }
   },
 

@@ -168,4 +168,17 @@ export const api = {
     request(`/api/dating/matches/${matchId}`, {
       method: "DELETE",
     }),
+
+  // Notifications
+  getNotifications: () => request("/api/notifications"),
+
+  markNotificationsAsRead: () =>
+    request("/api/notifications/read", {
+      method: "POST",
+    }),
+
+  markSingleNotificationAsRead: (id) =>
+    request(`/api/notifications/${id}/read`, {
+      method: "POST",
+    }),
 };
