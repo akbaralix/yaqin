@@ -111,6 +111,15 @@ CREATE TABLE IF NOT EXISTS public.messages (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 10. USER FOLLOWS (Instagram-style Obuna / Followers) TABLE
+CREATE TABLE IF NOT EXISTS public.user_follows (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    follower_id BIGINT NOT NULL REFERENCES public.users(user_id) ON DELETE CASCADE,
+    following_id BIGINT NOT NULL REFERENCES public.users(user_id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(follower_id, following_id)
+);
+
 -- INDEXES FOR MAXIMUM QUERY PERFORMANCE
 CREATE INDEX IF NOT EXISTS idx_posts_user_id ON public.posts(user_id);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON public.posts(created_at DESC);
@@ -125,6 +134,8 @@ CREATE INDEX IF NOT EXISTS idx_profile_views_profile ON public.profile_views(pro
 CREATE INDEX IF NOT EXISTS idx_messages_sender ON public.messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_messages_receiver ON public.messages(receiver_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages(created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_user_follows_follower ON public.user_follows(follower_id);
+CREATE INDEX IF NOT EXISTS idx_user_follows_following ON public.user_follows(following_id);
 
 -- ENABLE ROW LEVEL SECURITY
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
@@ -136,6 +147,7 @@ ALTER TABLE public.dating_swipes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profile_views ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_follows ENABLE ROW LEVEL SECURITY;
 
 -- ENABLE REALTIME PUBLICATION FOR MESSAGES TABLE
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
@@ -169,5 +181,8 @@ BEGIN
 
     DROP POLICY IF EXISTS "Public Messages" ON public.messages;
     CREATE POLICY "Public Messages" ON public.messages FOR ALL USING (true) WITH CHECK (true);
+
+    DROP POLICY IF EXISTS "Public User Follows" ON public.user_follows;
+    CREATE POLICY "Public User Follows" ON public.user_follows FOR ALL USING (true) WITH CHECK (true);
 END
 $$;

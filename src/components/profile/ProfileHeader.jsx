@@ -5,6 +5,9 @@ import {
   FaChartLine,
   FaTh,
   FaCalendarAlt,
+  FaUserPlus,
+  FaUserCheck,
+  FaShareAlt,
 } from "react-icons/fa";
 import fmale from "/gender-icon/fmale/fmale-icon5.jpg";
 import male from "/gender-icon/male/male-icon3.jpg";
@@ -13,9 +16,19 @@ import { api } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
 
-function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
+function ProfileHeader({
+  user,
+  activeTab,
+  onTabChange,
+  onOpenEdit,
+  isOwnProfile = true,
+  isFollowing = false,
+  onToggleFollow,
+  postsCount = 0,
+}) {
   const { refreshUser } = useAuth();
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   if (!user) return null;
 
@@ -36,6 +49,36 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
     }
   };
 
+  const handleFollowClick = async () => {
+    if (followLoading) return;
+    setFollowLoading(true);
+    try {
+      if (onToggleFollow) {
+        await onToggleFollow();
+      }
+    } catch (err) {
+      console.error("Follow error:", err);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const handleShareProfile = () => {
+    const url = user.username
+      ? `${window.location.origin}/${user.username}`
+      : `${window.location.origin}/profile`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      toast.success("Profil havolasi nusxalandi!");
+    } else {
+      toast.success("Havola nusxalandi!");
+    }
+  };
+
+  const totalPosts = postsCount || user.stats?.totalPosts || 0;
+  const followersCount = user.stats?.followersCount || 0;
+  const followingCount = user.stats?.followingCount || 0;
+
   return (
     <div className="profile-header-card">
       <div className="profile-banner-bg" />
@@ -55,21 +98,29 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
               className={`gender-badge ${user.gender}`}
               title={user.gender === "male" ? "Erkak" : "Ayol"}
               src={user.gender === "male" ? male : fmale}
-            ></img>
+              alt="gender"
+            />
           )}
         </div>
 
         <div className="profile-names-section">
+          {/* Header Row: Names + Action buttons */}
           <div className="profile-title-row">
             <div className="profile-full-name">
-              {/* Profile Sticker Badge - click to open picker */}
-              <h1>{user.first_name}</h1>{" "}
+              <div className="profile-name-and-username">
+                <h1>{user.first_name}</h1>
+                {user.username && (
+                  <span className="profile-username-handle">@{user.username}</span>
+                )}
+              </div>
+
+              {/* Profile Sticker Badge */}
               <button
                 className="profile-sticker-badge telegram-sparkle-badge"
-                onClick={() => setIsStickerPickerOpen(true)}
-                title="Stiker o'rnatish / o'zgartirish"
+                onClick={() => isOwnProfile && setIsStickerPickerOpen(true)}
+                title={isOwnProfile ? "Stiker o'rnatish / o'zgartirish" : "Foydalanuvchi stikeri"}
+                style={{ cursor: isOwnProfile ? "pointer" : "default" }}
               >
-                {/* Random harakatlanuvchi 5 ta zarracha */}
                 <span className="sparkle-particle p-top-left">✦</span>
                 <span className="sparkle-particle p-top-right">★</span>
                 <span className="sparkle-particle p-bottom-left">✦</span>
@@ -82,17 +133,69 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
                     src={user.profile_sticker}
                     alt="stiker"
                   />
-                ) : (
+                ) : isOwnProfile ? (
                   <span className="sticker-placeholder">＋</span>
-                )}
+                ) : null}
               </button>
+
               {user.age && (
                 <span className="profile-age"> ● {user.age} yosh</span>
               )}
             </div>
-            <button className="profile-edit-btn" onClick={onOpenEdit}>
-              <FaEdit /> Profilni tahrirlash
-            </button>
+
+            <div className="profile-action-buttons-group">
+              {isOwnProfile ? (
+                <button className="profile-edit-btn" onClick={onOpenEdit}>
+                  <FaEdit /> Tahrirlash
+                </button>
+              ) : (
+                <button
+                  className={`profile-follow-btn ${isFollowing ? "following" : ""}`}
+                  onClick={handleFollowClick}
+                  disabled={followLoading}
+                >
+                  {isFollowing ? (
+                    <>
+                      <FaUserCheck /> Obunadasiz
+                    </>
+                  ) : (
+                    <>
+                      <FaUserPlus /> Obuna bo'lish
+                    </>
+                  )}
+                </button>
+              )}
+
+              <button
+                className="profile-share-btn"
+                onClick={handleShareProfile}
+                title="Profilni ulashish"
+              >
+                <FaShareAlt />
+              </button>
+            </div>
+          </div>
+
+          {/* Instagram-Style Stats Counter (Posts, Followers, Following, Views) */}
+          <div className="profile-instagram-stats-row">
+            <div className="insta-stat-box">
+              <span className="insta-stat-number">{totalPosts}</span>
+              <span className="insta-stat-label">postlar</span>
+            </div>
+            <div className="insta-stat-box">
+              <span className="insta-stat-number">{followersCount}</span>
+              <span className="insta-stat-label">obunachilar</span>
+            </div>
+            <div className="insta-stat-box">
+              <span className="insta-stat-number">{followingCount}</span>
+              <span className="insta-stat-label">obunalar</span>
+            </div>
+            {user.stats?.viewsCount !== undefined && (
+              <div className="insta-stat-box">
+                <span className="insta-stat-number">{user.stats.viewsCount}</span>
+                <span className="insta-stat-label">ko'rishlar</span>
+              </div>
+            )}
           </div>
 
           <div className="profile-info-badges">
@@ -112,8 +215,9 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
             <p className="profile-bio-text">{user.bio}</p>
           ) : (
             <p className="profile-bio-empty">
-              O'zingiz haqingizda ma'lumot kiritilmagan. "Profilni tahrirlash"
-              orqali qo'shing.
+              {isOwnProfile
+                ? 'O\'zingiz haqingizda ma\'lumot kiritilmagan. "Tahrirlash" orqali qo\'shing.'
+                : "Bio ma'lumotlari kiritilmagan."}
             </p>
           )}
 
@@ -140,25 +244,29 @@ function ProfileHeader({ user, activeTab, onTabChange, onOpenEdit }) {
           onClick={() => onTabChange("posts")}
         >
           <FaTh />
-          <span>Postlarim ({user.stats?.totalPosts || 0})</span>
+          <span>Postlar ({totalPosts})</span>
         </button>
 
-        <button
-          className={`profile-tab-btn ${activeTab === "analytics" ? "active" : ""}`}
-          onClick={() => onTabChange("analytics")}
-        >
-          <FaChartLine />
-          <span>Statistika</span>
-        </button>
+        {isOwnProfile && (
+          <button
+            className={`profile-tab-btn ${activeTab === "analytics" ? "active" : ""}`}
+            onClick={() => onTabChange("analytics")}
+          >
+            <FaChartLine />
+            <span>Statistika & Analitika</span>
+          </button>
+        )}
       </div>
 
       {/* Sticker Picker Modal */}
-      <StickerPicker
-        isOpen={isStickerPickerOpen}
-        onClose={() => setIsStickerPickerOpen(false)}
-        onSelect={handleStickerSelect}
-        currentSticker={user.profile_sticker}
-      />
+      {isOwnProfile && (
+        <StickerPicker
+          isOpen={isStickerPickerOpen}
+          onClose={() => setIsStickerPickerOpen(false)}
+          onSelect={handleStickerSelect}
+          currentSticker={user.profile_sticker}
+        />
+      )}
     </div>
   );
 }

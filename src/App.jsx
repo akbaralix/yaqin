@@ -113,6 +113,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* Instagram-style /:username route (e.g. /akbarali) */}
+        <Route
+          path="/:username"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Fallback Catch-all Route */}
         <Route path="*" element={<Navigate to="/" replace />} />

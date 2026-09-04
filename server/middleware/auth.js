@@ -59,6 +59,7 @@ export const getToken = async (req, res) => {
         user.is_profile_complete === "true" ||
         (user.gender &&
           user.region &&
+          user.username &&
           (user.birth_date || user.age) &&
           (user.first_name || user.name))
     );
@@ -76,6 +77,7 @@ export const getToken = async (req, res) => {
         id: user.id,
         user_id: user.user_id,
         first_name: user.first_name,
+        username: user.username,
         is_profile_complete: isProfileComplete,
       },
       JWT_SECRET,
@@ -138,6 +140,7 @@ export const googleAuth = async (req, res) => {
         user.is_profile_complete === "true" ||
         (user.gender &&
           user.region &&
+          user.username &&
           (user.birth_date || user.age) &&
           (user.first_name || user.name))
     );
@@ -154,6 +157,7 @@ export const googleAuth = async (req, res) => {
         id: user.id,
         user_id: user.user_id,
         first_name: user.first_name,
+        username: user.username,
         is_profile_complete: isProfileComplete,
       },
       JWT_SECRET,
@@ -210,6 +214,7 @@ export const telegramWebAppAuth = async (req, res) => {
         user.is_profile_complete === "true" ||
         (user.gender &&
           user.region &&
+          user.username &&
           (user.birth_date || user.age) &&
           (user.first_name || user.name))
     );
@@ -227,6 +232,7 @@ export const telegramWebAppAuth = async (req, res) => {
         id: user.id,
         user_id: user.user_id,
         first_name: user.first_name,
+        username: user.username,
         is_profile_complete: isProfileComplete,
       },
       JWT_SECRET,

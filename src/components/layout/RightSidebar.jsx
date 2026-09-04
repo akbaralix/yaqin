@@ -47,37 +47,48 @@ function RightSidebar() {
           <p className="no-suggestions-text">Hozircha yangi tavsiyalar yo'q</p>
         ) : (
           <div className="suggestions-list">
-            {suggestions.map((person) => (
-              <div key={person.user_id} className="suggestion-item">
-                <img
-                  src={
-                    person.profile_pic ||
-                    "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                  }
-                  alt={person.first_name}
-                  className="suggestion-avatar"
-                />
-                <div className="suggestion-details">
-                  <div className="suggestion-name-row">
-                    <span className="suggestion-name">{person.first_name}</span>
-                    {person.age && (
-                      <span className="suggestion-age">, {person.age}</span>
-                    )}
-                  </div>
-                  <span className="suggestion-region">
-                    <FaMapMarkerAlt /> {person.region || "O'zbekiston"}
-                  </span>
-                  {person.compatibility && (
-                    <span className="compatibility-badge">
-                      {person.compatibility}% mos
+            {suggestions.map((person) => {
+              const profileLink = person.username
+                ? `/${person.username}`
+                : `/${person.user_id}`;
+
+              return (
+                <div key={person.user_id} className="suggestion-item">
+                  <Link to={profileLink}>
+                    <img
+                      src={
+                        person.profile_pic ||
+                        "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                      }
+                      alt={person.first_name}
+                      className="suggestion-avatar"
+                    />
+                  </Link>
+                  <Link to={profileLink} className="suggestion-details suggestion-link-wrapper">
+                    <div className="suggestion-name-row">
+                      <span className="suggestion-name">{person.first_name}</span>
+                      {person.username && (
+                        <span className="suggestion-username"> @{person.username}</span>
+                      )}
+                      {person.age && (
+                        <span className="suggestion-age">, {person.age}</span>
+                      )}
+                    </div>
+                    <span className="suggestion-region">
+                      <FaMapMarkerAlt /> {person.region || "O'zbekiston"}
                     </span>
-                  )}
+                    {person.compatibility && (
+                      <span className="compatibility-badge">
+                        {person.compatibility}% mos
+                      </span>
+                    )}
+                  </Link>
+                  <Link to="/dating" className="quick-swipe-link" title="Tanishish">
+                    <FaHeart />
+                  </Link>
                 </div>
-                <Link to="/dating" className="quick-swipe-link" title="Tanishish">
-                  <FaHeart />
-                </Link>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

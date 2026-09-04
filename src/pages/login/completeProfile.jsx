@@ -68,10 +68,17 @@ function CompleteProfile() {
 
   const [formData, setFormData] = useState({
     firstName: "",
+    username: "",
     birthDate: "",
     region: "",
     gender: "",
     bio: "",
+  });
+
+  const [usernameStatus, setUsernameStatus] = useState({
+    checking: false,
+    available: null,
+    message: "",
   });
 
   const navigate = useNavigate();
@@ -86,6 +93,7 @@ function CompleteProfile() {
       setFormData((prev) => ({
         ...prev,
         firstName: user.first_name || prev.firstName,
+        username: user.username || prev.username,
         region: user.region || prev.region,
         gender: user.gender || prev.gender,
         birthDate: user.birth_date || prev.birthDate,
@@ -104,7 +112,36 @@ function CompleteProfile() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "username") {
+      const clean = value.toLowerCase().replace(/[^a-z0-9_.]/g, "");
+      setFormData((prev) => ({ ...prev, username: clean }));
+      checkUsernameDebounced(clean);
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  // Username tekshirish
+  const checkUsernameDebounced = async (u) => {
+    if (!u || u.length < 3) {
+      setUsernameStatus({
+        checking: false,
+        available: false,
+        message: "Username kamida 3 ta belgidan iborat bo'lishi kerak",
+      });
+      return;
+    }
+    setUsernameStatus({ checking: true, available: null, message: "Tekshirilmoqda..." });
+    try {
+      const res = await api.checkUsername(u);
+      if (res.available) {
+        setUsernameStatus({ checking: false, available: true, message: "Username bo'sh va mos! ✓" });
+      } else {
+        setUsernameStatus({ checking: false, available: false, message: "Bu username allaqachon band" });
+      }
+    } catch {
+      setUsernameStatus({ checking: false, available: null, message: "" });
+    }
   };
 
   const handleGenderSelect = (gender) => {
@@ -128,7 +165,7 @@ function CompleteProfile() {
   };
 
   // 1-bosqichdan 2-bosqichga o'tish
-  const handleNextStep = (e) => {
+  const handleNextStep = async (e) => {
     e.preventDefault();
 
     if (!avatarFile && !avatarPreview) {
@@ -143,6 +180,26 @@ function CompleteProfile() {
       toast.error("Ism 3 tadan 25 tagacha harfdan iborat bo'lishi kerak");
       return;
     }
+    if (!formData.username.trim() || formData.username.length < 3) {
+      toast.error("Username kamida 3 ta belgidan iborat bo'lishi shart!");
+      return;
+    }
+    if (!/^[a-zA-Z0-9_.]{3,30}$/.test(formData.username)) {
+      toast.error("Username faqat harf, raqam va (_) belgilaridan iborat bo'lishi mumkin");
+      return;
+    }
+
+    // Double check availability
+    try {
+      const check = await api.checkUsername(formData.username);
+      if (!check.available) {
+        toast.error("Ushbu username band, iltimos boshqasini kiriting!");
+        return;
+      }
+    } catch (e) {
+      console.warn("Check username skip on network error");
+    }
+
     if (!formData.birthDate) {
       toast.error("Tug'ilgan sanangizni tanlang!");
       return;
@@ -176,6 +233,7 @@ function CompleteProfile() {
 
     const dataToSend = new FormData();
     dataToSend.append("firstName", formData.firstName);
+    dataToSend.append("username", formData.username);
     dataToSend.append("birthDate", formData.birthDate);
     dataToSend.append("region", formData.region);
     dataToSend.append("gender", formData.gender);
@@ -210,7 +268,7 @@ function CompleteProfile() {
 
   return (
     <div className="profile-container">
-      {/* 1-BOSQICH: Rasm, Ism, Sana, Viloyat */}
+      {/* 1-BOSQICH: Rasm, Ism, Username, Sana, Viloyat */}
       {complateType === "step1" && (
         <form
           className="complete-profile-card fade-in-content"
@@ -227,7 +285,7 @@ function CompleteProfile() {
             {formData.firstName
               ? `Salom, ${formData.firstName}! `
               : "Xush kelibsiz! "}
-            Tanishuvlar uchun shaxsiy ma'lumotlaringizni kiriting.
+            Tanishuvlar va profilingiz uchun shaxsiy ma'lumotlaringizni kiriting.
           </p>
 
           <div className="user-profile-pic">
@@ -270,6 +328,38 @@ function CompleteProfile() {
               placeholder="Masalan: Azizbek"
               required
             />
+          </div>
+
+          <div className="form-group">
+            <label>Foydalanuvchi nomi (Username) *</label>
+            <div className="username-input-wrapper">
+              <span className="username-prefix">@</span>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="akbarali"
+                maxLength={30}
+                required
+              />
+            </div>
+            {usernameStatus.message && (
+              <span
+                className={`field-status-msg ${
+                  usernameStatus.available === true
+                    ? "status-success"
+                    : usernameStatus.available === false
+                      ? "status-error"
+                      : "status-loading"
+                }`}
+              >
+                {usernameStatus.message}
+              </span>
+            )}
+            <small style={{ fontSize: "11px", color: "#64748b", marginTop: "4px" }}>
+              Instagram kabi modelingiz shu manzil bo'ladi (masalan: yaqin.uz/akbarali)
+            </small>
           </div>
 
           <div className="form-group">

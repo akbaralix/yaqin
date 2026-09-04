@@ -1529,10 +1529,25 @@ input[type="number"]::-webkit-inner-spin-button {
   align-items: center;
   gap: 10px;
 }
-.profile-full-name h1 {
+
+.profile-name-and-username {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-name-and-username h1 {
   font-size: 24px;
   font-weight: 800;
+  line-height: 1.2;
 }
+
+.profile-username-handle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 2px;
+}
+
 .profile-full-name img {
   width: 40px;
   height: 40px;
@@ -1545,12 +1560,19 @@ input[type="number"]::-webkit-inner-spin-button {
   color: var(--text-muted);
 }
 
+.profile-action-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .profile-edit-btn {
   padding: 8px 16px;
   border-radius: var(--radius-md);
   border: 1px solid #e2e8f0;
   background: #fff;
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 600;
   font-family: "poppins";
   color: var(--text-main);
   display: flex;
@@ -1564,6 +1586,210 @@ input[type="number"]::-webkit-inner-spin-button {
   background: #f8fafc;
   border-color: var(--primary);
   color: var(--primary);
+}
+
+.profile-follow-btn {
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  background: var(--primary-gradient);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(126, 62, 246, 0.25);
+  transition: all 0.2s ease;
+}
+
+.profile-follow-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(126, 62, 246, 0.35);
+}
+
+.profile-follow-btn.following {
+  background: #f1f5f9;
+  color: var(--text-main);
+  border: 1px solid #cbd5e1;
+  box-shadow: none;
+}
+
+.profile-follow-btn.following:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.profile-share-btn {
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-share-btn:hover {
+  background: #f8fafc;
+  color: var(--primary);
+}
+
+/* Instagram-Style Stats Row (Posts, Followers, Following) */
+.profile-instagram-stats-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 14px;
+  margin-bottom: 8px;
+  padding: 10px 0;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.insta-stat-box {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.insta-stat-number {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.insta-stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.profile-not-found-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 50px 20px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--card-border);
+}
+
+.not-found-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.go-home-btn {
+  margin-top: 16px;
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  background: var(--primary-gradient);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Username input & Clickable author links */
+.username-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.username-input-wrapper:focus-within {
+  border-color: var(--primary);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(116, 48, 239, 0.1);
+}
+
+.username-prefix {
+  padding-left: 14px;
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 16px;
+}
+
+.username-input-wrapper input {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  padding: 12px !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-size: 15px;
+}
+
+.field-status-msg {
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+.status-success {
+  color: #16a34a;
+}
+.status-error {
+  color: #dc2626;
+}
+.status-loading {
+  color: #7430ef;
+}
+
+.clickable-author-link {
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s;
+}
+.clickable-author-link:hover {
+  opacity: 0.85;
+}
+
+.clickable-comment-author {
+  text-decoration: none;
+  color: inherit;
+}
+.comment-author-username {
+  font-size: 11px;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.suggestion-link-wrapper {
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+}
+.suggestion-username {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.header-user-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+.header-user-handle {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.msg-author-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+.msg-author-handle {
+  font-size: 11px;
+  color: var(--primary);
+  font-weight: 600;
 }
 
 .profile-info-badges {

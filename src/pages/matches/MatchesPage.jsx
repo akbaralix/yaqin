@@ -840,22 +840,60 @@ function MatchesPage() {
             {/* 1. Telegram-Style Header */}
             <div className="chat-header">
               <div className="chat-user-header-info">
-                <div className="header-avatar-box">
-                  <img
-                    src={
-                      chatUser.profile_pic ||
-                      "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                    }
-                    alt={chatUser.first_name}
-                  />
-                  {chatUser.is_group ? (
+                {chatUser.is_group || Number(chatUser.user_id) === 1 ? (
+                  <div className="header-avatar-box">
+                    <img
+                      src={
+                        chatUser.profile_pic ||
+                        "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                      }
+                      alt={chatUser.first_name}
+                    />
                     <span className="group-badge-icon">👥</span>
-                  ) : (
+                  </div>
+                ) : (
+                  <Link
+                    to={
+                      chatUser.username
+                        ? `/${chatUser.username}`
+                        : chatUser.user_id
+                          ? `/${chatUser.user_id}`
+                          : "/profile"
+                    }
+                    className="header-avatar-box clickable-header-avatar"
+                    title="Profilni ko'rish"
+                  >
+                    <img
+                      src={
+                        chatUser.profile_pic ||
+                        "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                      }
+                      alt={chatUser.first_name}
+                    />
                     <span className="online-dot" />
-                  )}
-                </div>
+                  </Link>
+                )}
+
                 <div className="header-text-details">
-                  <h4>{chatUser.first_name}</h4>
+                  {chatUser.is_group || Number(chatUser.user_id) === 1 ? (
+                    <h4>{chatUser.first_name}</h4>
+                  ) : (
+                    <Link
+                      to={
+                        chatUser.username
+                          ? `/${chatUser.username}`
+                          : chatUser.user_id
+                            ? `/${chatUser.user_id}`
+                            : "/profile"
+                      }
+                      className="header-user-name-link"
+                    >
+                      <h4>{chatUser.first_name}</h4>
+                      {chatUser.username && (
+                        <span className="header-user-handle">@{chatUser.username}</span>
+                      )}
+                    </Link>
+                  )}
                   <span className="online-indicator">
                     {chatUser.is_group || Number(chatUser.user_id) === 1
                       ? "👥 Yaqin barcha foydalanuvchilar guruhi"
@@ -929,6 +967,12 @@ function MatchesPage() {
                   const hasReply = Boolean(msg.reply_to);
                   const isHighlighted = highlightedMsgId === msg.id;
 
+                  const senderProfilePath = msg.sender_username
+                    ? `/${msg.sender_username}`
+                    : msg.sender_id
+                      ? `/${msg.sender_id}`
+                      : "/profile";
+
                   return (
                     <div
                       key={msg.id}
@@ -940,14 +984,20 @@ function MatchesPage() {
                       {!isMe &&
                         (chatUser.is_group ||
                           Number(chatUser.user_id) === 1) && (
-                          <img
-                            src={
-                              msg.sender_pic ||
-                              "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                            }
-                            alt={msg.sender_name || "User"}
-                            className="msg-sender-avatar"
-                          />
+                          <Link
+                            to={senderProfilePath}
+                            className="msg-sender-avatar-link"
+                            title={msg.sender_name}
+                          >
+                            <img
+                              src={
+                                msg.sender_pic ||
+                                "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                              }
+                              alt={msg.sender_name || "User"}
+                              className="msg-sender-avatar"
+                            />
+                          </Link>
                         )}
 
                       <div
@@ -958,9 +1008,15 @@ function MatchesPage() {
                         {!isMe &&
                           (chatUser.is_group ||
                             Number(chatUser.user_id) === 1) && (
-                            <span className="msg-author-name">
+                            <Link
+                              to={senderProfilePath}
+                              className="msg-author-name msg-author-name-link"
+                            >
                               {msg.sender_name || "Foydalanuvchi"}
-                            </span>
+                              {msg.sender_username && (
+                                <span className="msg-author-handle"> @{msg.sender_username}</span>
+                              )}
+                            </Link>
                           )}
 
                         {hasReply && (

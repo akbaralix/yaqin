@@ -36,6 +36,132 @@ export const dbStore = {
     }
   },
 
+  async findUserByUsername(username) {
+    if (!username) return null;
+    const cleanUsername = String(username)
+      .trim()
+      .toLowerCase()
+      .replace(/^@/, "");
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .ilike("username", cleanUsername)
+        .maybeSingle();
+
+      if (error) {
+        console.warn("Supabase findUserByUsername error:", error.message);
+        return null;
+      }
+      return data;
+    } catch (err) {
+      console.error("findUserByUsername exception:", err);
+      return null;
+    }
+  },
+
+  async checkUsernameAvailable(username, excludeUserId = null) {
+    if (!username) return false;
+    const cleanUsername = String(username)
+      .trim()
+      .toLowerCase()
+      .replace(/^@/, "");
+    try {
+      let query = supabase
+        .from("users")
+        .select("user_id")
+        .ilike("username", cleanUsername);
+
+      if (excludeUserId) {
+        query = query.neq("user_id", Number(excludeUserId));
+      }
+
+      const { data, error } = await query.maybeSingle();
+      if (error && error.code !== "PGRST116") {
+        console.warn("checkUsernameAvailable error:", error.message);
+      }
+      return !data; // Agar mavjud bo'lmasa true (mavjud bo'sh)
+    } catch (err) {
+      console.error("checkUsernameAvailable exception:", err);
+      return true;
+    }
+  },
+
+  async isFollowing(followerId, followingId) {
+    if (
+      !followerId ||
+      !followingId ||
+      String(followerId) === String(followingId)
+    ) {
+      return false;
+    }
+    try {
+      const { data, error } = await supabase
+        .from("user_follows")
+        .select("id")
+        .eq("follower_id", Number(followerId))
+        .eq("following_id", Number(followingId))
+        .maybeSingle();
+
+      if (error) return false;
+      return Boolean(data);
+    } catch {
+      return false;
+    }
+  },
+
+  async toggleFollowUser(followerId, followingId) {
+    const fId = Number(followerId);
+    const tId = Number(followingId);
+
+    if (!fId || !tId || fId === tId) {
+      throw new Error("O'zingizga obuna bo'la olmaysiz");
+    }
+
+    try {
+      // Mavjud obunani tekshirish
+      const { data: existing } = await supabase
+        .from("user_follows")
+        .select("id")
+        .eq("follower_id", fId)
+        .eq("following_id", tId)
+        .maybeSingle();
+
+      let isFollowing = false;
+      if (existing) {
+        await supabase.from("user_follows").delete().eq("id", existing.id);
+        isFollowing = false;
+      } else {
+        await supabase.from("user_follows").insert({
+          follower_id: fId,
+          following_id: tId,
+          created_at: new Date().toISOString(),
+        });
+        isFollowing = true;
+      }
+
+      // Yangi followers va following sonini olish
+      const { count: followersCount } = await supabase
+        .from("user_follows")
+        .select("id", { count: "exact", head: true })
+        .eq("following_id", tId);
+
+      const { count: followingCount } = await supabase
+        .from("user_follows")
+        .select("id", { count: "exact", head: true })
+        .eq("follower_id", tId);
+
+      return {
+        isFollowing,
+        followersCount: followersCount || 0,
+        followingCount: followingCount || 0,
+      };
+    } catch (err) {
+      console.error("toggleFollowUser exception:", err);
+      throw err;
+    }
+  },
+
   async upsertUser(userData) {
     if (!userData || !userData.user_id) {
       throw new Error("user_id is required for upsertUser");
@@ -815,7 +941,6 @@ export const dbStore = {
         .select("id", { count: "exact", head: true })
         .or(`user1_id.eq.${cleanUserId},user2_id.eq.${cleanUserId}`);
 
-      // Profile views
       const { data: recentViews, count: viewsCount } = await supabase
         .from("profile_views")
         .select("*", { count: "exact" })
@@ -826,6 +951,17 @@ export const dbStore = {
       const totalViews = viewsCount || user.views_count || 0;
       const totalLikes = (postLikesReceived || 0) + (datingLikesReceived || 0);
 
+      // Followers and Following count
+      const { count: followersCount } = await supabase
+        .from("user_follows")
+        .select("id", { count: "exact", head: true })
+        .eq("following_id", cleanUserId);
+
+      const { count: followingCount } = await supabase
+        .from("user_follows")
+        .select("id", { count: "exact", head: true })
+        .eq("follower_id", cleanUserId);
+
       return {
         userId: cleanUserId,
         viewsCount: totalViews,
@@ -834,6 +970,8 @@ export const dbStore = {
         datingLikesReceived: datingLikesReceived || 0,
         totalPosts: (userPosts || []).length,
         totalMatches: totalMatches || 0,
+        followersCount: followersCount || 0,
+        followingCount: followingCount || 0,
         engagementRate:
           totalViews > 0
             ? Math.min(Math.round((totalLikes / totalViews) * 100), 100)

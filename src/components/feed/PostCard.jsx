@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import {
   FaHeart,
   FaRegHeart,
@@ -100,7 +101,16 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
     <article className="post-card">
       {/* Post Author Header */}
       <header className="post-header">
-        <div className="post-author-info">
+        <Link
+          to={
+            post.author?.username
+              ? `/${post.author.username}`
+              : post.author?.user_id
+                ? `/${post.author.user_id}`
+                : "/profile"
+          }
+          className="post-author-info clickable-author-link"
+        >
           <img
             src={
               post.author?.profile_pic ||
@@ -121,6 +131,7 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
               <span className="post-author-name">
                 {post.author?.first_name || "Foydalanuvchi"}
               </span>
+
               {post.author?.age && (
                 <span className="post-author-age">, {post.author.age}</span>
               )}
@@ -137,7 +148,7 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
               ) : null}
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Recommendation Score / Shared Interests Badge */}
         {post.recommendationScore && post.recommendationScore > 75 && (
@@ -239,7 +250,16 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
       <div className="post-body">
         {post.caption && (
           <p className="post-caption">
-            <span className="post-caption-author">
+            <Link
+              to={
+                post.author?.username
+                  ? `/${post.author.username}`
+                  : post.author?.user_id
+                    ? `/${post.author.user_id}`
+                    : "/profile"
+              }
+              className="post-caption-author"
+            >
               {post.author?.profile_sticker && (
                 <img
                   className="post-author-sticker-img"
@@ -248,7 +268,7 @@ function PostCard({ post, onOpenComments, onLikeToggled }) {
                 />
               )}
               {post.author?.first_name} :
-            </span>{" "}
+            </Link>{" "}
             {post.caption}
           </p>
         )}

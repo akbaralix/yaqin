@@ -67,6 +67,9 @@ export const api = {
     }),
 
   // User Profile
+  checkUsername: (username) =>
+    request(`/api/user/check-username?username=${encodeURIComponent(username)}`),
+
   completeProfile: (formData) =>
     request("/api/user/complete-profile", {
       method: "POST",
@@ -81,7 +84,12 @@ export const api = {
       body: formData,
     }),
 
-  getUserProfile: (userId) => request(`/api/user/${userId}`),
+  getUserProfile: (userIdOrUsername) => request(`/api/user/${encodeURIComponent(userIdOrUsername)}`),
+
+  toggleFollow: (userIdOrUsername) =>
+    request(`/api/user/${encodeURIComponent(userIdOrUsername)}/follow`, {
+      method: "POST",
+    }),
 
   getUserAnalytics: () => request("/api/user/analytics/stats"),
 

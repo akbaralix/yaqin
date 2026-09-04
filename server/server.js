@@ -114,6 +114,22 @@ app.post("/api/auth/google", googleAuth);
 app.post("/api/auth/telegram-webapp", telegramWebAppAuth);
 
 // --- 3. ONBOARDING / COMPLETE PROFILE ---
+app.get("/api/user/check-username", optionalAuth, async (req, res) => {
+  try {
+    const { username } = req.query;
+    const currentUserId = req.user?.user_id;
+    if (!username) {
+      return res.status(400).json({ available: false, error: "Username kiritilmadi" });
+    }
+
+    const available = await dbStore.checkUsernameAvailable(username, currentUserId);
+    return res.json({ success: true, available });
+  } catch (err) {
+    console.error("Check username error:", err);
+    return res.status(500).json({ available: false, error: "Server xatosi" });
+  }
+});
+
 app.post(
   "/api/user/complete-profile",
   authenticateToken,
@@ -123,6 +139,7 @@ app.post(
       const userId = req.user.user_id;
       const {
         firstName,
+        username,
         birthDate,
         region,
         gender,
@@ -131,10 +148,25 @@ app.post(
         profileSticker,
       } = req.body;
 
-      if (!firstName || !region || !gender) {
+      if (!firstName || !region || !gender || !username) {
         return res
           .status(400)
-          .json({ error: "Barcha majburiy maydonlarni to'ldiring!" });
+          .json({ error: "Barcha majburiy maydonlarni (ism, username, viloyat, jins) to'ldiring!" });
+      }
+
+      // Username validation (3-30 chars, alphanumeric + underscores + dots)
+      const cleanUsername = username.trim().toLowerCase().replace(/^@/, "");
+      if (!/^[a-zA-Z0-9_.]{3,30}$/.test(cleanUsername)) {
+        return res
+          .status(400)
+          .json({ error: "Username 3 tadan 30 tagacha harf, raqam yoki (_) iborat bo'lishi kerak" });
+      }
+
+      const isAvailable = await dbStore.checkUsernameAvailable(cleanUsername, userId);
+      if (!isAvailable) {
+        return res
+          .status(400)
+          .json({ error: "Bu username allaqachon band! Boshqa username tanlang." });
       }
 
       let profilePicUrl = null;
@@ -157,6 +189,7 @@ app.post(
       const updatePayload = {
         user_id: userId,
         first_name: firstName.trim(),
+        username: cleanUsername,
         birth_date: birthDate || null,
         age: calculatedAge || 20,
         region: region.trim(),
@@ -180,6 +213,7 @@ app.post(
           id: updatedUser.id,
           user_id: updatedUser.user_id,
           first_name: updatedUser.first_name,
+          username: updatedUser.username,
           is_profile_complete: true,
         },
         JWT_SECRET,
@@ -217,6 +251,7 @@ app.get("/api/user/me", authenticateToken, async (req, res) => {
       user.is_profile_complete === "true" ||
       (user.gender &&
         user.region &&
+        user.username &&
         (user.birth_date || user.age) &&
         (user.first_name || user.name)),
     );
@@ -233,6 +268,8 @@ app.get("/api/user/me", authenticateToken, async (req, res) => {
           totalLikesReceived: analytics?.totalLikesReceived || 0,
           totalPosts: analytics?.totalPosts || 0,
           totalMatches: analytics?.totalMatches || 0,
+          followersCount: analytics?.followersCount || 0,
+          followingCount: analytics?.followingCount || 0,
         },
       },
     });
@@ -244,7 +281,7 @@ app.get("/api/user/me", authenticateToken, async (req, res) => {
   }
 });
 
-// Edit user profile (Requirement 5: Tahrirlash)
+// Edit user profile
 app.put(
   "/api/user/profile",
   authenticateToken,
@@ -254,6 +291,7 @@ app.put(
       const userId = req.user.user_id;
       const {
         firstName,
+        username,
         bio,
         birthDate,
         region,
@@ -282,6 +320,19 @@ app.put(
       };
 
       if (firstName) updatePayload.first_name = firstName.trim();
+      if (username) {
+        const cleanUsername = username.trim().toLowerCase().replace(/^@/, "");
+        if (!/^[a-zA-Z0-9_.]{3,30}$/.test(cleanUsername)) {
+          return res
+            .status(400)
+            .json({ error: "Username 3 tadan 30 tagacha harf, raqam yoki (_) iborat bo'lishi kerak" });
+        }
+        const isAvailable = await dbStore.checkUsernameAvailable(cleanUsername, userId);
+        if (!isAvailable) {
+          return res.status(400).json({ error: "Bu username allaqachon band!" });
+        }
+        updatePayload.username = cleanUsername;
+      }
       if (bio !== undefined) updatePayload.bio = bio.trim();
       if (region) updatePayload.region = region.trim();
       if (gender) updatePayload.gender = gender;
@@ -311,7 +362,37 @@ app.put(
   },
 );
 
-// User Profile Analytics (Requirement 5: Profil Analitikasi)
+// Toggle Follow / Obuna bo'lish endpoint
+app.post("/api/user/:userId/follow", authenticateToken, async (req, res) => {
+  try {
+    const currentUserId = req.user.user_id;
+    let targetIdentifier = req.params.userId;
+
+    let targetUser = null;
+    if (/^\d+$/.test(targetIdentifier)) {
+      targetUser = await dbStore.findUser(targetIdentifier);
+    }
+    if (!targetUser) {
+      targetUser = await dbStore.findUserByUsername(targetIdentifier);
+    }
+
+    if (!targetUser) {
+      return res.status(404).json({ error: "Foydalanuvchi topilmadi" });
+    }
+
+    const result = await dbStore.toggleFollowUser(currentUserId, targetUser.user_id);
+
+    return res.json({
+      success: true,
+      ...result,
+    });
+  } catch (err) {
+    console.error("Follow error:", err);
+    return res.status(500).json({ error: err.message || "Obunani yangilashda xatolik" });
+  }
+});
+
+// User Profile Analytics
 app.get("/api/user/analytics/stats", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.user_id;
@@ -328,27 +409,52 @@ app.get("/api/user/analytics/stats", authenticateToken, async (req, res) => {
   }
 });
 
-// View public profile of another user & record view
-app.get("/api/user/:userId", optionalAuth, async (req, res) => {
+// View public profile of another user (supports ID or username, e.g. /api/user/akbarali or /api/user/123456)
+app.get("/api/user/:identifier", optionalAuth, async (req, res) => {
   try {
-    const targetUserId = req.params.userId;
+    const identifier = req.params.identifier;
     const viewerId = req.user?.user_id;
 
-    const user = await dbStore.findUser(targetUserId);
+    let user = null;
+    // Agar raqam bo'lsa avval user_id bo'yicha qidiramiz
+    if (/^\d+$/.test(identifier)) {
+      user = await dbStore.findUser(identifier);
+    }
+    // Agar topilmasa yoki matn (username) bo'lsa username bo'yicha qidiramiz
     if (!user) {
-      return res.status(404).json({ error: "Profil topilmadi" });
+      user = await dbStore.findUserByUsername(identifier);
     }
 
+    if (!user) {
+      return res.status(404).json({ error: "Foydalanuvchi profili topilmadi" });
+    }
+
+    if (viewerId && String(viewerId) !== String(user.user_id)) {
+      await dbStore.recordProfileView(viewerId, user.user_id);
+    }
+
+    const posts = await dbStore.getPosts({ authorUserId: user.user_id });
+    const analytics = await dbStore.getUserAnalytics(user.user_id);
+    let isFollowing = false;
     if (viewerId) {
-      await dbStore.recordProfileView(viewerId, targetUserId);
+      isFollowing = await dbStore.isFollowing(viewerId, user.user_id);
     }
-
-    const posts = await dbStore.getPosts({ authorUserId: targetUserId });
 
     return res.json({
       success: true,
-      user,
+      user: {
+        ...user,
+        stats: {
+          viewsCount: analytics?.viewsCount || 0,
+          totalLikesReceived: analytics?.totalLikesReceived || 0,
+          totalPosts: posts.length,
+          totalMatches: analytics?.totalMatches || 0,
+          followersCount: analytics?.followersCount || 0,
+          followingCount: analytics?.followingCount || 0,
+        },
+      },
       posts,
+      isFollowing,
     });
   } catch (err) {
     console.error("Get user profile error:", err);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { FaTimes, FaPaperPlane } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { api } from "../../services/api";
@@ -86,21 +87,45 @@ function CommentsModal({ isOpen, post, onClose, onCommentAdded }) {
         {/* Post Caption teaser */}
         {post.caption && (
           <div className="comments-post-summary">
-            <img
-              src={
-                post.author?.profile_pic ||
-                "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+            <Link
+              to={
+                post.author?.username
+                  ? `/${post.author.username}`
+                  : post.author?.user_id
+                    ? `/${post.author.user_id}`
+                    : "/profile"
               }
-              alt={post.author?.first_name}
-              className="comment-user-avatar"
-            />
+              onClick={onClose}
+            >
+              <img
+                src={
+                  post.author?.profile_pic ||
+                  "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                }
+                alt={post.author?.first_name}
+                className="comment-user-avatar"
+              />
+            </Link>
             <div className="comment-bubble post-author-bubble">
-              <span className="comment-author-name">
+              <Link
+                to={
+                  post.author?.username
+                    ? `/${post.author.username}`
+                    : post.author?.user_id
+                      ? `/${post.author.user_id}`
+                      : "/profile"
+                }
+                onClick={onClose}
+                className="comment-author-name clickable-comment-author"
+              >
                 {post.author?.profile_sticker && (
                   <img className="comment-author-sticker-img" src={post.author.profile_sticker} alt="stiker" />
                 )}
                 {post.author?.first_name}
-              </span>
+                {post.author?.username && (
+                  <span className="comment-author-username"> @{post.author.username}</span>
+                )}
+              </Link>
               <p className="comment-text">{post.caption}</p>
             </div>
           </div>
@@ -116,30 +141,47 @@ function CommentsModal({ isOpen, post, onClose, onCommentAdded }) {
               <span>Birinchi bo'lib fikr bildiring! ✨</span>
             </div>
           ) : (
-            comments.map((c) => (
-              <div key={c.id} className="comment-item">
-                <img
-                  src={
-                    c.author_pic ||
-                    "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                  }
-                  alt={c.author_name}
-                  className="comment-user-avatar"
-                />
-                <div className="comment-content">
-                  <div className="comment-bubble">
-                    <span className="comment-author-name">
-                      {c.author_sticker && (
-                        <img className="comment-author-sticker-img" src={c.author_sticker} alt="stiker" />
-                      )}
-                      {c.author_name}
-                    </span>
-                    <p className="comment-text">{c.text}</p>
+            comments.map((c) => {
+              const authorProfilePath = c.author_username
+                ? `/${c.author_username}`
+                : c.user_id
+                  ? `/${c.user_id}`
+                  : "/profile";
+
+              return (
+                <div key={c.id} className="comment-item">
+                  <Link to={authorProfilePath} onClick={onClose}>
+                    <img
+                      src={
+                        c.author_pic ||
+                        "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                      }
+                      alt={c.author_name}
+                      className="comment-user-avatar"
+                    />
+                  </Link>
+                  <div className="comment-content">
+                    <div className="comment-bubble">
+                      <Link
+                        to={authorProfilePath}
+                        onClick={onClose}
+                        className="comment-author-name clickable-comment-author"
+                      >
+                        {c.author_sticker && (
+                          <img className="comment-author-sticker-img" src={c.author_sticker} alt="stiker" />
+                        )}
+                        {c.author_name}
+                        {c.author_username && (
+                          <span className="comment-author-username"> @{c.author_username}</span>
+                        )}
+                      </Link>
+                      <p className="comment-text">{c.text}</p>
+                    </div>
+                    <span className="comment-time">{formatTime(c.created_at)}</span>
                   </div>
-                  <span className="comment-time">{formatTime(c.created_at)}</span>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
           <div ref={bottomRef} />
         </div>

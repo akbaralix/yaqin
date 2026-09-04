@@ -53,6 +53,7 @@ const interestsList = [
 function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
   const { user, refreshUser } = useAuth();
   const [firstName, setFirstName] = useState("");
+  const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [region, setRegion] = useState("");
@@ -62,10 +63,17 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // MANTIQIY XATO 2 TUZATILDI: State'larni user o'zgarganda doim yangilash
+  const [usernameStatus, setUsernameStatus] = useState({
+    checking: false,
+    available: null,
+    message: "",
+  });
+
+  // State'larni user o'zgarganda doim yangilash
   useEffect(() => {
     if (user && isOpen) {
       setFirstName(user.first_name || "");
+      setUsername(user.username || "");
       setBio(user.bio || "");
       setBirthDate(user.birth_date || "");
       setRegion(user.region || "");
@@ -73,6 +81,7 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
       setInterests(Array.isArray(user.interests) ? user.interests : []);
       setAvatarPreview(user.profile_pic || null);
       setAvatarFile(null);
+      setUsernameStatus({ checking: false, available: null, message: "" });
     }
   }, [user, isOpen]);
 
@@ -84,6 +93,34 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
       setAvatarFile(file);
       setAvatarPreview(URL.createObjectURL(file));
     }
+  };
+
+  const handleUsernameChange = (e) => {
+    const clean = e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, "");
+    setUsername(clean);
+
+    if (clean === user?.username) {
+      setUsernameStatus({ checking: false, available: true, message: "Hozirgi usernamesingiz" });
+      return;
+    }
+
+    if (clean.length < 3) {
+      setUsernameStatus({ checking: false, available: false, message: "Kamida 3 ta belgi" });
+      return;
+    }
+
+    setUsernameStatus({ checking: true, available: null, message: "Tekshirilmoqda..." });
+    api.checkUsername(clean)
+      .then((res) => {
+        if (res.available) {
+          setUsernameStatus({ checking: false, available: true, message: "Username bo'sh va mos! ✓" });
+        } else {
+          setUsernameStatus({ checking: false, available: false, message: "Bu username band" });
+        }
+      })
+      .catch(() => {
+        setUsernameStatus({ checking: false, available: null, message: "" });
+      });
   };
 
   const toggleInterest = (name) => {
@@ -100,6 +137,14 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
       toast.error("Ismingizni kiriting!");
       return;
     }
+    if (!username.trim() || username.length < 3) {
+      toast.error("Username kamida 3 ta belgidan iborat bo'lishi shart!");
+      return;
+    }
+    if (!/^[a-zA-Z0-9_.]{3,30}$/.test(username)) {
+      toast.error("Username faqat harf, raqam va (_) belgilaridan iborat bo'lishi mumkin");
+      return;
+    }
     if (bio.trim().length < 10) {
       toast.error("Bio ga o'zingiz haqingizda kamida 10 ta belgi yozing!");
       return;
@@ -114,6 +159,7 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
     try {
       const formData = new FormData();
       formData.append("firstName", firstName.trim());
+      formData.append("username", username.trim());
       formData.append("bio", bio.trim());
       if (birthDate) formData.append("birthDate", birthDate);
       if (region) formData.append("region", region);
@@ -192,6 +238,35 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
               onChange={(e) => setFirstName(e.target.value)}
               required
             />
+          </div>
+
+          {/* Username */}
+          <div className="form-group">
+            <label>Foydalanuvchi nomi (Username) *</label>
+            <div className="username-input-wrapper">
+              <span className="username-prefix">@</span>
+              <input
+                type="text"
+                value={username}
+                onChange={handleUsernameChange}
+                placeholder="akbarali"
+                maxLength={30}
+                required
+              />
+            </div>
+            {usernameStatus.message && (
+              <span
+                className={`field-status-msg ${
+                  usernameStatus.available === true
+                    ? "status-success"
+                    : usernameStatus.available === false
+                      ? "status-error"
+                      : "status-loading"
+                }`}
+              >
+                {usernameStatus.message}
+              </span>
+            )}
           </div>
 
           <div className="form-group">
