@@ -150,7 +150,7 @@ export const dbStore = {
         });
         await botSendNotification(
           tId,
-          `${fId.first_name} sizga obuna bo'ldi ➕`,
+          `${sender?.first_name} sizga obuna bo'ldi ➕`,
         );
       }
 
