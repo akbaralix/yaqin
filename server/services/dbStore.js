@@ -148,7 +148,10 @@ export const dbStore = {
           type: "follow",
           text: "sizga obuna bo'ldi ➕",
         });
-        await botSendNotification(fId, "sizga obuna bo'ldi ➕");
+        await botSendNotification(
+          tId,
+          `${fId.first_name} sizga obuna bo'ldi ➕`,
+        );
       }
 
       // Yangi followers va following sonini olish
@@ -571,7 +574,13 @@ export const dbStore = {
         .maybeSingle();
 
       if (checkError) throw checkError;
+      const { data: sender, error: senderError } = await supabase
+        .from("users")
+        .select("first_name")
+        .eq("user_id", cleanUserId)
+        .maybeSingle();
 
+      if (senderError) throw senderError;
       let hasLiked = false;
 
       if (existing) {
@@ -604,8 +613,7 @@ export const dbStore = {
 
         // O'z postiga like bosganda notification yubormaymiz
         if (postItem && Number(postItem.user_id) !== cleanUserId) {
-          const notificationText = `${sender.first_name} Postingizga like bosdi ❤️`;
-
+          const notificationText = `${sender?.first_name || "Foydalanuvchi"} postingizga like bosdi ❤️`;
           await this.createNotification({
             recipient_id: postItem.user_id,
             sender_id: cleanUserId,
