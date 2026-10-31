@@ -148,13 +148,22 @@ Yangi tanishuvlar, samimiy suhbatlar va balki siz izlagan inson — barchasi shu
   });
 }
 
-export async function botSendNotification(chatId, text) {
+export async function botSendNotification(chatId, text, userId = null) {
   if (!bot) return false;
 
   try {
     await bot.telegram.sendMessage(chatId, text, {
       parse_mode: "HTML",
+      ...Markup.inlineKeyboard([
+        [
+          Markup.button.webApp(
+            "💜 Profilni ko'rish",
+            `https://yaqin-uz.web.app/profile/${userId}`,
+          ),
+        ],
+      ]),
     });
+
     return true;
   } catch (err) {
     console.error("Telegram notification error:", err.message);

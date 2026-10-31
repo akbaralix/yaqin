@@ -147,7 +147,11 @@ export const dbStore = {
           type: "follow",
           text: "sizga obuna bo'ldi ➕",
         });
-        await botSendNotification(tId, `Sizga yangi kimdir obuna bo'ldi ➕`);
+        await botSendNotification(
+          tId,
+          `Sizga yangi kimdir obuna bo'ldi ➕`,
+          fId,
+        );
       }
 
       // Yangi followers va following sonini olish
@@ -619,7 +623,11 @@ export const dbStore = {
           });
 
           // Telegram bot notification
-          await botSendNotification(postItem.user_id, notificationText);
+          await botSendNotification(
+            postItem.user_id,
+            notificationText,
+            sender.user_id,
+          );
         }
       }
 
