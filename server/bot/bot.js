@@ -26,11 +26,6 @@ if (bot) {
     const promoImage = path.join(__dirname, "YaqinPromo.png");
     const otpCode = String(ctx.payload || "").trim();
 
-    if (String(ctx.from.id) === String(adminId)) {
-      ctx.reply("👋 Botga xush kelibsiz, admin!");
-      return;
-    }
-
     if (!otpCode) {
       return ctx.replyWithPhoto(
         { source: promoImage },
