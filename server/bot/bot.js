@@ -152,7 +152,9 @@ export async function botSendNotification(chatId, text) {
   if (!bot) return false;
 
   try {
-    await bot.telegram.sendMessage(chatId, text);
+    await bot.telegram.sendMessage(chatId, text, {
+      parse_mode: "HTML",
+    });
     return true;
   } catch (err) {
     console.error("Telegram notification error:", err.message);

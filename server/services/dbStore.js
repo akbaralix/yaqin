@@ -141,17 +141,13 @@ export const dbStore = {
         });
         isFollowing = true;
 
-        // Obuna bo'lingan foydalanuvchiga bildirishnoma
         await this.createNotification({
           recipient_id: tId,
           sender_id: fId,
           type: "follow",
           text: "sizga obuna bo'ldi ➕",
         });
-        await botSendNotification(
-          tId,
-          `${sender?.first_name} sizga obuna bo'ldi ➕`,
-        );
+        await botSendNotification(tId, `Sizga yangi kimdir obuna bo'ldi ➕`);
       }
 
       // Yangi followers va following sonini olish
@@ -613,7 +609,7 @@ export const dbStore = {
 
         // O'z postiga like bosganda notification yubormaymiz
         if (postItem && Number(postItem.user_id) !== cleanUserId) {
-          const notificationText = `${sender?.first_name || "Foydalanuvchi"} postingizga like bosdi ❤️`;
+          const notificationText = `<b>${sender?.first_name || "Foydalanuvchi"}</b> postingizga like bosdi ❤️`;
           await this.createNotification({
             recipient_id: postItem.user_id,
             sender_id: cleanUserId,
