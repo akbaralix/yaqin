@@ -119,10 +119,15 @@ app.get("/api/user/check-username", optionalAuth, async (req, res) => {
     const { username } = req.query;
     const currentUserId = req.user?.user_id;
     if (!username) {
-      return res.status(400).json({ available: false, error: "Username kiritilmadi" });
+      return res
+        .status(400)
+        .json({ available: false, error: "Username kiritilmadi" });
     }
 
-    const available = await dbStore.checkUsernameAvailable(username, currentUserId);
+    const available = await dbStore.checkUsernameAvailable(
+      username,
+      currentUserId,
+    );
     return res.json({ success: true, available });
   } catch (err) {
     console.error("Check username error:", err);
@@ -151,7 +156,10 @@ app.post(
       if (!firstName || !region || !gender || !username) {
         return res
           .status(400)
-          .json({ error: "Barcha majburiy maydonlarni (ism, username, viloyat, jins) to'ldiring!" });
+          .json({
+            error:
+              "Barcha majburiy maydonlarni (ism, username, viloyat, jins) to'ldiring!",
+          });
       }
 
       // Username validation (3-30 chars, alphanumeric + underscores + dots)
@@ -159,14 +167,22 @@ app.post(
       if (!/^[a-zA-Z0-9_.]{3,30}$/.test(cleanUsername)) {
         return res
           .status(400)
-          .json({ error: "Username 3 tadan 30 tagacha harf, raqam yoki (_) iborat bo'lishi kerak" });
+          .json({
+            error:
+              "Username 3 tadan 30 tagacha harf, raqam yoki (_) iborat bo'lishi kerak",
+          });
       }
 
-      const isAvailable = await dbStore.checkUsernameAvailable(cleanUsername, userId);
+      const isAvailable = await dbStore.checkUsernameAvailable(
+        cleanUsername,
+        userId,
+      );
       if (!isAvailable) {
         return res
           .status(400)
-          .json({ error: "Bu username allaqachon band! Boshqa username tanlang." });
+          .json({
+            error: "Bu username allaqachon band! Boshqa username tanlang.",
+          });
       }
 
       let profilePicUrl = null;
@@ -325,11 +341,19 @@ app.put(
         if (!/^[a-zA-Z0-9_.]{3,30}$/.test(cleanUsername)) {
           return res
             .status(400)
-            .json({ error: "Username 3 tadan 30 tagacha harf, raqam yoki (_) iborat bo'lishi kerak" });
+            .json({
+              error:
+                "Username 3 tadan 30 tagacha harf, raqam yoki (_) iborat bo'lishi kerak",
+            });
         }
-        const isAvailable = await dbStore.checkUsernameAvailable(cleanUsername, userId);
+        const isAvailable = await dbStore.checkUsernameAvailable(
+          cleanUsername,
+          userId,
+        );
         if (!isAvailable) {
-          return res.status(400).json({ error: "Bu username allaqachon band!" });
+          return res
+            .status(400)
+            .json({ error: "Bu username allaqachon band!" });
         }
         updatePayload.username = cleanUsername;
       }
@@ -380,7 +404,10 @@ app.post("/api/user/:userId/follow", authenticateToken, async (req, res) => {
       return res.status(404).json({ error: "Foydalanuvchi topilmadi" });
     }
 
-    const result = await dbStore.toggleFollowUser(currentUserId, targetUser.user_id);
+    const result = await dbStore.toggleFollowUser(
+      currentUserId,
+      targetUser.user_id,
+    );
 
     return res.json({
       success: true,
@@ -388,7 +415,9 @@ app.post("/api/user/:userId/follow", authenticateToken, async (req, res) => {
     });
   } catch (err) {
     console.error("Follow error:", err);
-    return res.status(500).json({ error: err.message || "Obunani yangilashda xatolik" });
+    return res
+      .status(500)
+      .json({ error: err.message || "Obunani yangilashda xatolik" });
   }
 });
 
@@ -409,7 +438,6 @@ app.get("/api/user/analytics/stats", authenticateToken, async (req, res) => {
   }
 });
 
-// View public profile of another user (supports ID or username, e.g. /api/user/akbarali or /api/user/123456)
 app.get("/api/user/:identifier", optionalAuth, async (req, res) => {
   try {
     const identifier = req.params.identifier;
@@ -434,7 +462,9 @@ app.get("/api/user/:identifier", optionalAuth, async (req, res) => {
     }
 
     const postsResult = await dbStore.getPosts({ authorUserId: user.user_id });
-    const userPosts = Array.isArray(postsResult) ? postsResult : (postsResult.posts || []);
+    const userPosts = Array.isArray(postsResult)
+      ? postsResult
+      : postsResult.posts || [];
     const analytics = await dbStore.getUserAnalytics(user.user_id);
     let isFollowing = false;
     if (viewerId) {
@@ -468,8 +498,17 @@ app.get("/api/user/:identifier", optionalAuth, async (req, res) => {
 // Feed with filters, Smart Recommendation and Infinite Scroll pagination
 app.get("/api/posts", optionalAuth, async (req, res) => {
   try {
-    const { region, gender, ageMin, ageMax, interest, search, userId, page = 1, limit = 15 } =
-      req.query;
+    const {
+      region,
+      gender,
+      ageMin,
+      ageMax,
+      interest,
+      search,
+      userId,
+      page = 1,
+      limit = 15,
+    } = req.query;
     const currentUserId = req.user?.user_id;
 
     const result = await dbStore.getPosts({
@@ -741,7 +780,8 @@ app.delete(
 
       return res.json({
         success: true,
-        message: "Match va barcha bog'liq ma'lumotlar ikki tomon uchun o'chirildi",
+        message:
+          "Match va barcha bog'liq ma'lumotlar ikki tomon uchun o'chirildi",
       });
     } catch (err) {
       console.error("Delete match error:", err);
@@ -786,13 +826,21 @@ app.post("/api/messages/:partnerId", authenticateToken, async (req, res) => {
       };
     }
 
-    if (!payload || (typeof payload === "string" && !payload.trim()) || (typeof payload === "object" && !payload.text && !payload.sticker)) {
+    if (
+      !payload ||
+      (typeof payload === "string" && !payload.trim()) ||
+      (typeof payload === "object" && !payload.text && !payload.sticker)
+    ) {
       return res
         .status(400)
         .json({ error: "Xabar matni yoki stiker bo'sh bo'lishi mumkin emas" });
     }
 
-    const message = await dbStore.sendMessage(currentUserId, partnerId, payload);
+    const message = await dbStore.sendMessage(
+      currentUserId,
+      partnerId,
+      payload,
+    );
 
     return res.status(201).json({
       success: true,
@@ -818,7 +866,9 @@ app.get("/api/notifications", authenticateToken, async (req, res) => {
     });
   } catch (err) {
     console.error("Get notifications error:", err);
-    return res.status(500).json({ error: "Bildirishnomalarni yuklashda xatolik" });
+    return res
+      .status(500)
+      .json({ error: "Bildirishnomalarni yuklashda xatolik" });
   }
 });
 
@@ -827,7 +877,10 @@ app.post("/api/notifications/read", authenticateToken, async (req, res) => {
     const userId = req.user.user_id;
     await dbStore.markNotificationsAsRead(userId);
 
-    return res.json({ success: true, message: "Barcha bildirishnomalar o'qildi" });
+    return res.json({
+      success: true,
+      message: "Barcha bildirishnomalar o'qildi",
+    });
   } catch (err) {
     console.error("Mark notifications read error:", err);
     return res.status(500).json({ error: "Xatolik yuz berdi" });

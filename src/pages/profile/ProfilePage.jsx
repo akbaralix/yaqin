@@ -7,6 +7,7 @@ import EditProfileModal from "../../components/profile/EditProfileModal";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
 import toast from "react-hot-toast";
+import { useTelegramBackButton } from "../../hooks/useTelegramBackButton";
 
 function ProfilePage({ onOpenCreatePost }) {
   const { username: paramUsername } = useParams();
@@ -22,12 +23,16 @@ function ProfilePage({ onOpenCreatePost }) {
   const [activeTab, setActiveTab] = useState("posts");
   const [isEditOpen, setIsEditOpen] = useState(false);
 
+  // Telegram Back Button: Profilni tahrirlash oynasi ochiq bo'lsa, avval uni yopadi
+  useTelegramBackButton(isEditOpen ? () => setIsEditOpen(false) : null);
+
   // Bu o'zining profilimi yoki boshqa usernikimi?
   const isOwnProfile =
     !paramUsername ||
     (currentUser &&
-      (String(paramUsername).toLowerCase() === String(currentUser.username).toLowerCase() ||
-       String(paramUsername) === String(currentUser.user_id)));
+      (String(paramUsername).toLowerCase() ===
+        String(currentUser.username).toLowerCase() ||
+        String(paramUsername) === String(currentUser.user_id)));
 
   useEffect(() => {
     async function loadProfile() {
@@ -49,7 +54,9 @@ function ProfilePage({ onOpenCreatePost }) {
             setUserPosts(res.posts || []);
           } else {
             setTargetUser(currentUser);
-            const postsRes = await api.getPosts({ userId: currentUser.user_id });
+            const postsRes = await api.getPosts({
+              userId: currentUser.user_id,
+            });
             setUserPosts(postsRes?.posts || []);
           }
         } catch (err) {
@@ -61,7 +68,6 @@ function ProfilePage({ onOpenCreatePost }) {
         return;
       }
 
-      // 2. Boshqa userning profili bo'lsa (/akbarali yoki /123456)
       try {
         const res = await api.getUserProfile(paramUsername);
         if (res?.user) {
@@ -85,7 +91,9 @@ function ProfilePage({ onOpenCreatePost }) {
   const handleToggleFollow = async () => {
     if (!targetUser) return;
     try {
-      const res = await api.toggleFollow(targetUser.user_id || targetUser.username);
+      const res = await api.toggleFollow(
+        targetUser.user_id || targetUser.username,
+      );
       if (res?.success) {
         setIsFollowing(res.isFollowing);
         setTargetUser((prev) => ({
@@ -98,7 +106,9 @@ function ProfilePage({ onOpenCreatePost }) {
         }));
 
         if (res.isFollowing) {
-          toast.success(`@${targetUser.username || targetUser.first_name} ga obuna bo'ldingiz! 🎉`);
+          toast.success(
+            `@${targetUser.username || targetUser.first_name} ga obuna bo'ldingiz! 🎉`,
+          );
         } else {
           toast(`Obuna bekor qilindi`, { icon: "ℹ️" });
         }
@@ -155,7 +165,12 @@ function ProfilePage({ onOpenCreatePost }) {
             posts={userPosts}
             onOpenCreatePost={isOwnProfile ? onOpenCreatePost : undefined}
             isOwnProfile={isOwnProfile}
-            userName={targetUser?.first_name || (targetUser?.username ? `@${targetUser.username}` : "Foydalanuvchi")}
+            userName={
+              targetUser?.first_name ||
+              (targetUser?.username
+                ? `@${targetUser.username}`
+                : "Foydalanuvchi")
+            }
           />
         ) : isOwnProfile ? (
           <ProfileAnalytics />

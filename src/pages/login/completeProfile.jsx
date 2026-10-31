@@ -131,13 +131,25 @@ function CompleteProfile() {
       });
       return;
     }
-    setUsernameStatus({ checking: true, available: null, message: "Tekshirilmoqda..." });
+    setUsernameStatus({
+      checking: true,
+      available: null,
+      message: "Tekshirilmoqda...",
+    });
     try {
       const res = await api.checkUsername(u);
       if (res.available) {
-        setUsernameStatus({ checking: false, available: true, message: "Username bo'sh va mos! ✓" });
+        setUsernameStatus({
+          checking: false,
+          available: true,
+          message: "Username bo'sh va mos! ✓",
+        });
       } else {
-        setUsernameStatus({ checking: false, available: false, message: "Bu username allaqachon band" });
+        setUsernameStatus({
+          checking: false,
+          available: false,
+          message: "Bu username allaqachon band",
+        });
       }
     } catch {
       setUsernameStatus({ checking: false, available: null, message: "" });
@@ -185,7 +197,9 @@ function CompleteProfile() {
       return;
     }
     if (!/^[a-zA-Z0-9_.]{3,30}$/.test(formData.username)) {
-      toast.error("Username faqat harf, raqam va (_) belgilaridan iborat bo'lishi mumkin");
+      toast.error(
+        "Username faqat harf, raqam va (_) belgilaridan iborat bo'lishi mumkin",
+      );
       return;
     }
 
@@ -285,7 +299,8 @@ function CompleteProfile() {
             {formData.firstName
               ? `Salom, ${formData.firstName}! `
               : "Xush kelibsiz! "}
-            Tanishuvlar va profilingiz uchun shaxsiy ma'lumotlaringizni kiriting.
+            Tanishuvlar va profilingiz uchun shaxsiy ma'lumotlaringizni
+            kiriting.
           </p>
 
           <div className="user-profile-pic">
@@ -339,7 +354,7 @@ function CompleteProfile() {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                placeholder="akbarali"
+                placeholder="Foydalanuvchi nomi"
                 maxLength={30}
                 required
               />
@@ -357,8 +372,10 @@ function CompleteProfile() {
                 {usernameStatus.message}
               </span>
             )}
-            <small style={{ fontSize: "11px", color: "#64748b", marginTop: "4px" }}>
-              Instagram kabi modelingiz shu manzil bo'ladi (masalan: yaqin.uz/akbarali)
+            <small
+              style={{ fontSize: "11px", color: "#64748b", marginTop: "4px" }}
+            >
+              Instagram kabi modelingiz shu manzil bo'ladi
             </small>
           </div>
 

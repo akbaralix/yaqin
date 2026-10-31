@@ -100,22 +100,43 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
     setUsername(clean);
 
     if (clean === user?.username) {
-      setUsernameStatus({ checking: false, available: true, message: "Hozirgi usernamesingiz" });
+      setUsernameStatus({
+        checking: false,
+        available: true,
+        message: "Hozirgi usernamesingiz",
+      });
       return;
     }
 
     if (clean.length < 3) {
-      setUsernameStatus({ checking: false, available: false, message: "Kamida 3 ta belgi" });
+      setUsernameStatus({
+        checking: false,
+        available: false,
+        message: "Kamida 3 ta belgi",
+      });
       return;
     }
 
-    setUsernameStatus({ checking: true, available: null, message: "Tekshirilmoqda..." });
-    api.checkUsername(clean)
+    setUsernameStatus({
+      checking: true,
+      available: null,
+      message: "Tekshirilmoqda...",
+    });
+    api
+      .checkUsername(clean)
       .then((res) => {
         if (res.available) {
-          setUsernameStatus({ checking: false, available: true, message: "Username bo'sh va mos! ✓" });
+          setUsernameStatus({
+            checking: false,
+            available: true,
+            message: "Username bo'sh va mos! ✓",
+          });
         } else {
-          setUsernameStatus({ checking: false, available: false, message: "Bu username band" });
+          setUsernameStatus({
+            checking: false,
+            available: false,
+            message: "Bu username band",
+          });
         }
       })
       .catch(() => {
@@ -142,7 +163,9 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
       return;
     }
     if (!/^[a-zA-Z0-9_.]{3,30}$/.test(username)) {
-      toast.error("Username faqat harf, raqam va (_) belgilaridan iborat bo'lishi mumkin");
+      toast.error(
+        "Username faqat harf, raqam va (_) belgilaridan iborat bo'lishi mumkin",
+      );
       return;
     }
     if (bio.trim().length < 10) {
@@ -249,7 +272,7 @@ function EditProfileModal({ isOpen, onClose, onProfileUpdated }) {
                 type="text"
                 value={username}
                 onChange={handleUsernameChange}
-                placeholder="akbarali"
+                placeholder=""
                 maxLength={30}
                 required
               />

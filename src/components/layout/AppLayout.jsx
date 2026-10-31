@@ -10,6 +10,7 @@ import { useNotifications } from "../../context/NotificationContext";
 import { FaPlus, FaRegHeart } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
 import logoIcon from "/icon.png";
+import { useTelegramBackButton } from "../../hooks/useTelegramBackButton";
 
 function AppLayout({ children }) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -17,6 +18,17 @@ function AppLayout({ children }) {
   const { activeMatch, setActiveMatch } = useAuth();
   const { unreadCount } = useNotifications();
   const location = useLocation();
+
+  // Telegram Back Button: Agar modal (notification, create post, match) ochiq bo'lsa, avval ularni yopadi
+  useTelegramBackButton(
+    isNotifOpen
+      ? () => setIsNotifOpen(false)
+      : isCreateOpen
+        ? () => setIsCreateOpen(false)
+        : activeMatch
+          ? () => setActiveMatch(null)
+          : null,
+  );
 
   const showRightSidebar =
     location.pathname === "/" || location.pathname === "/dating";

@@ -4,6 +4,7 @@ import PostCard from "../../components/feed/PostCard";
 import CommentsModal from "../../components/feed/CommentsModal";
 import { FaPlus, FaSpinner, FaRegSmile } from "react-icons/fa";
 import { useDataCache } from "../../context/DataCacheContext";
+import { useTelegramBackButton } from "../../hooks/useTelegramBackButton";
 
 function HomePage({ onOpenCreatePost }) {
   const {
@@ -22,6 +23,11 @@ function HomePage({ onOpenCreatePost }) {
 
   const [activeCommentsPost, setActiveCommentsPost] = useState(null);
   const bottomObserverRef = useRef(null);
+
+  // Telegram Back Button: Agar izohlar darchasi ochiq bo'lsa uni yopadi
+  useTelegramBackButton(
+    activeCommentsPost ? () => setActiveCommentsPost(null) : null,
+  );
 
   // Sahifa ochilganda kesh bo'lsa yuklamaydi, yo'q bo'lsa yuklaydi
   useEffect(() => {

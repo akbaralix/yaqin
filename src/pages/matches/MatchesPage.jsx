@@ -22,6 +22,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useDataCache } from "../../context/DataCacheContext";
 import toast from "react-hot-toast";
 import StickerPicker from "../../components/dating/StickerPicker";
+import { useTelegramBackButton } from "../../hooks/useTelegramBackButton";
 
 // Umumiy Guruh obyekti
 const GLOBAL_GROUP_USER = {
@@ -46,6 +47,15 @@ function MatchesPage() {
 
   // Active chat state
   const [chatUser, setChatUser] = useState(null);
+
+  // Telegram WebApp Back Button: Agar chat ochiq bo'lsa, avval chatni yopadi!
+  useTelegramBackButton(
+    chatUser
+      ? () => {
+          setChatUser(null);
+        }
+      : null,
+  );
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [loadingChat, setLoadingChat] = useState(false);
