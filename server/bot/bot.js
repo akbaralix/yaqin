@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const token = process.env.BOT_TOKEN;
+const adminId = "907402803";
 
 export const bot = token ? new Telegraf(token) : null;
 
@@ -22,6 +23,9 @@ if (bot) {
     const promoImage = path.join(__dirname, "YaqinPromo.png");
     const otpCode = String(ctx.payload).trim();
 
+    if (ctx.from.id === Number(adminId)) {
+      ctx.reply("👋 Botga xush kelibsiz, admin!");
+    }
     if (!otpCode) {
       return ctx.replyWithPhoto(
         { source: promoImage },
