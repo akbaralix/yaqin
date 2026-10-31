@@ -148,6 +148,17 @@ Yangi tanishuvlar, samimiy suhbatlar va balki siz izlagan inson — barchasi shu
   });
 }
 
+export async function botSendNotification(chatId, text) {
+  if (!bot) return false;
+
+  try {
+    await bot.telegram.sendMessage(chatId, text);
+    return true;
+  } catch (err) {
+    console.error("Telegram notification error:", err.message);
+    return false;
+  }
+}
 export const startBot = () => {
   if (!bot) {
     console.log(

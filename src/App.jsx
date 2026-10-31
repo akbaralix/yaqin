@@ -113,7 +113,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* Instagram-style /:username route (e.g. /akbarali) */}
         <Route
           path="/:username"
           element={

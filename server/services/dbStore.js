@@ -1,3 +1,5 @@
+import { text } from "express";
+import { botSendNotification } from "../bot/bot.js";
 import { supabase } from "../supabase/supabase.js";
 
 export const dbStore = {
@@ -559,51 +561,73 @@ export const dbStore = {
     try {
       const cleanUserId = Number(userId);
 
-      // Check if user already liked
-      const { data: existing } = await supabase
+      // User like bosganmi?
+      const { data: existing, error: checkError } = await supabase
         .from("post_likes")
         .select("id")
         .eq("post_id", postId)
         .eq("user_id", cleanUserId)
         .maybeSingle();
 
+      if (checkError) throw checkError;
+
       let hasLiked = false;
+
       if (existing) {
-        await supabase.from("post_likes").delete().eq("id", existing.id);
-        hasLiked = false;
+        // Unlike
+        const { error } = await supabase
+          .from("post_likes")
+          .delete()
+          .eq("id", existing.id);
+
+        if (error) throw error;
       } else {
-        await supabase.from("post_likes").insert({
+        // Like
+        const { error } = await supabase.from("post_likes").insert({
           post_id: postId,
           user_id: cleanUserId,
-          created_at: new Date().toISOString(),
         });
+
+        if (error) throw error;
+
         hasLiked = true;
 
-        // Post muallifiga bildirishnoma yuborish
-        const { data: postItem } = await supabase
+        // Post muallifini topish
+        const { data: postItem, error: postError } = await supabase
           .from("posts")
           .select("user_id")
           .eq("id", postId)
           .maybeSingle();
 
+        if (postError) throw postError;
+
+        // O'z postiga like bosganda notification yubormaymiz
         if (postItem && Number(postItem.user_id) !== cleanUserId) {
+          const notificationText = "Postingizga like bosdi ❤️";
+
           await this.createNotification({
             recipient_id: postItem.user_id,
             sender_id: cleanUserId,
             type: "like_post",
             post_id: postId,
-            text: "postingizga like bosdi ❤️",
+            text: notificationText,
           });
+
+          // Telegram bot notification
+          await botSendNotification(postItem.user_id, notificationText);
         }
       }
 
-      // Count total likes
-      const { count } = await supabase
+      // Like sonini hisoblash
+      const { count, error: countError } = await supabase
         .from("post_likes")
         .select("id", { count: "exact", head: true })
         .eq("post_id", postId);
 
+      if (countError) throw countError;
+
       const likesCount = count || 0;
+
       await supabase
         .from("posts")
         .update({
@@ -910,7 +934,10 @@ export const dbStore = {
             recipient_id: cleanTargetId,
             sender_id: cleanSenderId,
             type: "dating_like",
-            text: action === "superlike" ? "sizga Superlike yubordi! ⭐️" : "sizni yoqtirdi (Like) ❤️",
+            text:
+              action === "superlike"
+                ? "sizga Superlike yubordi! ⭐️"
+                : "sizni yoqtirdi (Like) ❤️",
           });
         }
       }
@@ -993,7 +1020,11 @@ export const dbStore = {
   async createNotification(notifData) {
     try {
       const { recipient_id, sender_id, type, post_id, text } = notifData;
-      if (!recipient_id || !sender_id || Number(recipient_id) === Number(sender_id)) {
+      if (
+        !recipient_id ||
+        !sender_id ||
+        Number(recipient_id) === Number(sender_id)
+      ) {
         return null;
       }
 
@@ -1043,7 +1074,9 @@ export const dbStore = {
         .select("user_id, first_name, username, profile_pic, profile_sticker")
         .in("user_id", senderIds);
 
-      const senderMap = new Map((senders || []).map((s) => [String(s.user_id), s]));
+      const senderMap = new Map(
+        (senders || []).map((s) => [String(s.user_id), s]),
+      );
 
       // Post rasmlarini olish (agar post_id bo'lsa)
       const postIds = [
