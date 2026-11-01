@@ -15,7 +15,6 @@ function SwipeCard({ candidate, onSwipe, isTop }) {
   const startPosRef = useRef({ x: 0, y: 0 });
 
   if (!candidate) return null;
-  console.log(candidate);
 
   // Touch & Mouse Drag Handlers
   const handleTouchStart = (e) => {

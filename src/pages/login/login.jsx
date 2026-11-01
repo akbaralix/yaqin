@@ -347,20 +347,6 @@ function Login() {
 
       {loginType === "telegram" && (
         <section className="login-card fade-in-content">
-          <button
-            onClick={() => {
-              setLoginType("default");
-              setLoading(false);
-              setStatusMessage("");
-              if (channelRef.current) {
-                supabase.removeChannel(channelRef.current);
-                channelRef.current = null;
-              }
-            }}
-            className="back-btn"
-          >
-            <IoArrowBackOutline />
-          </button>
           <h2>Telegram orqali kirish</h2>
           <p>
             Pastdagi tugmani bosganingizda <b>@YaqinaTanishuvBot</b> botiga
@@ -381,6 +367,20 @@ function Login() {
               Telegram botga o'tish
             </button>
           )}
+          <button
+            onClick={() => {
+              setLoginType("default");
+              setLoading(false);
+              setStatusMessage("");
+              if (channelRef.current) {
+                supabase.removeChannel(channelRef.current);
+                channelRef.current = null;
+              }
+            }}
+            className="back-btn"
+          >
+            <IoArrowBackOutline /> Ortga
+          </button>
         </section>
       )}
     </main>

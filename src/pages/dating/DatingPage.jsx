@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import SwipeCard from "../../components/dating/SwipeCard";
 import MatchModal from "../../components/dating/MatchModal";
+import PremiumModal from "../../components/dating/PremiumModal";
 import { api } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useDataCache } from "../../context/DataCacheContext";
@@ -41,11 +42,13 @@ function DatingPage() {
     initDatingFilters,
     updateDatingFilters,
     removeCandidateLocally,
+    restoreCandidateLocally,
     addMatchLocally,
     loadMatches,
   } = useDataCache();
 
   const [activeMatchUser, setActiveMatchUser] = useState(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   // Default jinsni foydalanuvchining qarama-qarshi jinsiga sozlaymiz
@@ -80,6 +83,15 @@ function DatingPage() {
     try {
       const res = await api.swipeCandidate(targetId, action);
 
+      if (res && res.success === false && res.code === "SUPERLIKE_LIMIT") {
+        // Agar superlike limitiga yetgan bo'lsa, nomzodni qaytarib joylashtiramiz va Premium modalini ochamiz
+        if (candidate) {
+          restoreCandidateLocally(candidate);
+        }
+        setShowPremiumModal(true);
+        return;
+      }
+
       if (res?.isMatch) {
         const matched = res.matchedUser || candidate;
         setActiveMatchUser(matched);
@@ -104,9 +116,17 @@ function DatingPage() {
         }
       } else if (action === "like") {
         toast.success("Yoqdi! ❤️ Agar u ham yoqtirsa, match bo'ladi");
+      } else if (action === "superlike") {
+        toast.success("Superlike yuborildi! ⭐️");
       }
     } catch (err) {
       console.error("Swipe action error:", err);
+      if (err.message && (err.message.includes("SUPERLIKE_LIMIT") || err.message.includes("Superlike limitingiz"))) {
+        if (candidate) {
+          restoreCandidateLocally(candidate);
+        }
+        setShowPremiumModal(true);
+      }
     }
   };
 
@@ -257,6 +277,12 @@ function DatingPage() {
           onClose={() => setActiveMatchUser(null)}
         />
       )}
+
+      {/* Premium Upgrade Modal */}
+      <PremiumModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+      />
     </div>
   );
 }

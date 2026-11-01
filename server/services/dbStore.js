@@ -147,11 +147,6 @@ export const dbStore = {
           type: "follow",
           text: "sizga obuna bo'ldi ➕",
         });
-        await botSendNotification(
-          tId,
-          `Sizga yangi kimdir obuna bo'ldi ➕`,
-          fId,
-        );
       }
 
       // Yangi followers va following sonini olish
@@ -613,21 +608,13 @@ export const dbStore = {
 
         // O'z postiga like bosganda notification yubormaymiz
         if (postItem && Number(postItem.user_id) !== cleanUserId) {
-          const notificationText = `<b>${sender?.first_name || "Foydalanuvchi"}</b> postingizga like bosdi ❤️`;
           await this.createNotification({
             recipient_id: postItem.user_id,
             sender_id: cleanUserId,
             type: "like_post",
             post_id: postId,
-            text: notificationText,
+            text: "postingizga like bosdi ❤️",
           });
-
-          // Telegram bot notification
-          await botSendNotification(
-            postItem.user_id,
-            notificationText,
-            sender.user_id,
-          );
         }
       }
 
@@ -867,10 +854,147 @@ export const dbStore = {
     }
   },
 
+  // Foydalanuvchining Premium maqomini tekshirish
+  async isUserPremium(userId) {
+    try {
+      const cleanUserId = Number(userId);
+      const now = new Date().toISOString();
+      const { data } = await supabase
+        .from("telegram_auth_sessions")
+        .select("id, expires_at")
+        .eq("telegram_id", cleanUserId)
+        .eq("status", "premium_active")
+        .gt("expires_at", now)
+        .limit(1);
+
+      return Array.isArray(data) && data.length > 0;
+    } catch (err) {
+      console.warn("isUserPremium check warn:", err.message);
+      return false;
+    }
+  },
+
+  // Premium faollashtirish (Telegram Stars to'lovidan so'ng)
+  async activatePremium(telegramId, months = 1) {
+    try {
+      const cleanTelegramId = Number(telegramId);
+      const now = new Date();
+      // Mavjud muddati bo'lsa unga qo'shamiz
+      let baseDate = now;
+      const { data: existing } = await supabase
+        .from("telegram_auth_sessions")
+        .select("id, expires_at")
+        .eq("telegram_id", cleanTelegramId)
+        .eq("status", "premium_active")
+        .gt("expires_at", now.toISOString())
+        .order("expires_at", { ascending: false })
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        const curExp = new Date(existing[0].expires_at);
+        if (curExp > baseDate) {
+          baseDate = curExp;
+        }
+      }
+
+      const daysToAdd = months === 3 ? 90 : 30;
+      const expiresAt = new Date(baseDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+
+      const { data, error } = await supabase
+        .from("telegram_auth_sessions")
+        .insert({
+          otp_code: `PREMIUM_${cleanTelegramId}_${Date.now()}`,
+          telegram_id: cleanTelegramId,
+          status: "premium_active",
+          expires_at: expiresAt.toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, expiresAt };
+    } catch (err) {
+      console.error("activatePremium error:", err);
+      throw err;
+    }
+  },
+
+  // Superlikeni kunlik tekshirish (1 kunda 3 marotaba)
+  async checkAndUseSuperlike(userId) {
+    try {
+      const cleanUserId = Number(userId);
+
+      // Agar foydalanuvchi Premium bo'lsa, hech qanday limitsiz ruxsat beramiz!
+      const isPremium = await this.isUserPremium(cleanUserId);
+      if (isPremium) {
+        return {
+          allowed: true,
+          isPremium: true,
+          used: 0,
+          max: 9999,
+          remaining: 9999,
+        };
+      }
+      // Bugungi kun boshlanishi (UTC yoki Toshkent vaqti hisobi bilan)
+      const now = new Date();
+      // Toshkent vaqti bo'yicha kun boshi (UTC+5)
+      const uzOffset = 5 * 60 * 60 * 1000;
+      const uzTodayStart = new Date(Math.floor((Date.now() + uzOffset) / 86400000) * 86400000 - uzOffset);
+
+      const { count, error } = await supabase
+        .from("dating_swipes")
+        .select("id", { count: "exact", head: true })
+        .eq("sender_id", cleanUserId)
+        .eq("action", "superlike")
+        .gte("created_at", uzTodayStart.toISOString());
+
+      if (error) {
+        console.error("checkAndUseSuperlike error:", error);
+        throw error;
+      }
+
+      const usedCount = count || 0;
+      const MAX_DAILY_SUPERLIKES = 3;
+
+      if (usedCount >= MAX_DAILY_SUPERLIKES) {
+        return {
+          allowed: false,
+          used: usedCount,
+          max: MAX_DAILY_SUPERLIKES,
+          remaining: 0,
+        };
+      }
+
+      return {
+        allowed: true,
+        used: usedCount,
+        max: MAX_DAILY_SUPERLIKES,
+        remaining: MAX_DAILY_SUPERLIKES - usedCount - 1,
+      };
+    } catch (err) {
+      console.error("checkAndUseSuperlike exception:", err);
+      throw err;
+    }
+  },
+
   async handleSwipe(senderId, targetId, action) {
     try {
       const cleanSenderId = Number(senderId);
       const cleanTargetId = Number(targetId);
+
+      // Agar superlike bo'lsa, kunlik limitni (3 ta) tekshiramiz
+      if (action === "superlike") {
+        const superlikeStatus = await this.checkAndUseSuperlike(cleanSenderId);
+        if (!superlikeStatus.allowed) {
+          return {
+            success: false,
+            message: "Bugungi superlike limitingiz tugagan! (3/3). Premium versiya orqali cheksiz superlikelarga ega bo'ling ⭐️",
+            code: "SUPERLIKE_LIMIT",
+            limit: superlikeStatus.max,
+            used: superlikeStatus.used,
+          };
+        }
+      }
 
       const { error: swipeErr } = await supabase.from("dating_swipes").upsert(
         {
@@ -889,7 +1013,6 @@ export const dbStore = {
       let isMatch = false;
       let matchRecord = null;
       const targetUser = await this.findUser(cleanTargetId);
-
       if (action === "like" || action === "superlike") {
         const { data: mutualSwipe } = await supabase
           .from("dating_swipes")
@@ -1041,11 +1164,14 @@ export const dbStore = {
         return null;
       }
 
+      const cleanRecipientId = Number(recipient_id);
+      const cleanSenderId = Number(sender_id);
+
       const { data, error } = await supabase
         .from("notifications")
         .insert({
-          recipient_id: Number(recipient_id),
-          sender_id: Number(sender_id),
+          recipient_id: cleanRecipientId,
+          sender_id: cleanSenderId,
           type,
           post_id: post_id || null,
           text: text || "",
@@ -1059,6 +1185,30 @@ export const dbStore = {
         console.warn("createNotification error:", error.message);
         return null;
       }
+
+      // Har bir bildirishnomani Telegram bot orqali ham yuborish (sender ismi bilan)
+      try {
+        const sender = await this.findUser(cleanSenderId);
+        const senderName = sender?.first_name || "Foydalanuvchi";
+        
+        let botText = "";
+        // Matn ichida agar allaqachon sender ismi bo'lmasa, uni qo'shamiz
+        if (text && text.includes(senderName)) {
+          botText = text;
+        } else {
+          // HTML teglarini tozalab yoki chiroyli formatda botga yuboramiz
+          const cleanText = (text || "").replace(/<[^>]*>?/gm, "").trim();
+          botText = `👤 <b>${senderName}</b> ${cleanText}`;
+        }
+
+        // Asinxron tarzda bot orqali yuborish (asosiy jarayonni to'xtatib qo'ymaslik uchun)
+        botSendNotification(cleanRecipientId, botText, cleanSenderId).catch((botErr) => {
+          console.warn("Notification Telegram bot send warn:", botErr.message);
+        });
+      } catch (tgErr) {
+        console.warn("Error preparing telegram bot notification:", tgErr.message);
+      }
+
       return data;
     } catch (err) {
       console.warn("createNotification exception:", err.message);

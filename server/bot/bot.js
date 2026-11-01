@@ -1,5 +1,6 @@
 import { Telegraf, Markup } from "telegraf";
 import { supabase } from "../supabase/supabase.js";
+import { dbStore } from "../services/dbStore.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -43,9 +44,17 @@ Yangi tanishuvlar, samimiy suhbatlar va balki siz izlagan inson — barchasi shu
                 "https://yaqin-uz.web.app",
               ),
             ],
+            [
+              Markup.button.callback("⭐ Yaqin Premium olish", "buy_premium_menu"),
+            ],
           ]),
         },
       );
+    }
+
+    // Foydalanuvchi /start premium orqali kelganda
+    if (otpCode.toLowerCase() === "premium") {
+      return sendPremiumMenu(ctx);
     }
 
     try {
@@ -146,6 +155,123 @@ Yangi tanishuvlar, samimiy suhbatlar va balki siz izlagan inson — barchasi shu
       await ctx
         .editMessageText("❌ Amalni bekor qilishda xatolik yuz berdi.")
         .catch(() => {});
+    }
+  });
+
+  // ==========================================
+  // ⭐ TELEGRAM STARS PREMIUM HARID QILISH
+  // ==========================================
+
+  const sendPremiumMenu = async (ctx) => {
+    const isPremium = await dbStore.isUserPremium(ctx.from.id);
+    let statusText = isPremium ? "✅ Sizda hozirda <b>Premium faol</b>!" : "❌ Sizda hozirda Premium faol emas.";
+
+    const text = `👑 <b>Yaqin Premium obunasi</b>\n\n${statusText}\n\n<b>Premium imkoniyatlari:</b>\n⭐️ <b>Cheksiz Superlikelar</b> (kunlik limitsiz)\n🚀 <b>Top o'rinda ko'rinish</b>\n👀 <b>Profilni kim ko'rganini bilish</b>\n✨ <b>Maxsus profil belgisi</b>\n\n<b>Tariflar:</b>\n1️⃣ <b>1 oylik obuna</b> — <b>100 Stars</b> ⭐\n2️⃣ <b>3 oylik obuna</b> — <b>280 Stars</b> ⭐ <i>(Chegirma bilan)</i>\n\nO'zingizga ma'qul tarifni tanlang:`;
+
+    const keyboard = Markup.inlineKeyboard([
+      [
+        Markup.button.callback("⭐ 1 oy — 100 Stars", "pay_stars_1m"),
+      ],
+      [
+        Markup.button.callback("⭐ 3 oy — 280 Stars (Chegirma)", "pay_stars_3m"),
+      ],
+      [
+        Markup.button.webApp("💜 Yaqin'ni ochish", "https://yaqin-uz.web.app"),
+      ],
+    ]);
+
+    if (ctx.callbackQuery) {
+      await ctx.editMessageText(text, { parse_mode: "HTML", ...keyboard }).catch(async () => {
+        await ctx.reply(text, { parse_mode: "HTML", ...keyboard });
+      });
+    } else {
+      await ctx.reply(text, { parse_mode: "HTML", ...keyboard });
+    }
+  };
+
+  bot.command("premium", async (ctx) => {
+    await sendPremiumMenu(ctx);
+  });
+
+  bot.action("buy_premium_menu", async (ctx) => {
+    await ctx.answerCbQuery().catch(() => {});
+    await sendPremiumMenu(ctx);
+  });
+
+  // 1 oylik to'lov invoysi (100 Stars)
+  bot.action("pay_stars_1m", async (ctx) => {
+    await ctx.answerCbQuery().catch(() => {});
+    try {
+      await ctx.replyWithInvoice({
+        title: "Yaqin Premium (1 oy)",
+        description: "1 oy davomida barcha cheklovlarsiz Yaqin Premium imkoniyatlari",
+        payload: `premium_1m_${ctx.from.id}_${Date.now()}`,
+        currency: "XTR",
+        prices: [{ label: "1 oylik Yaqin Premium", amount: 100 }],
+      });
+    } catch (err) {
+      console.error("1m invoice error:", err);
+      ctx.reply("❌ Hisob-faktura yaratishda xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
+    }
+  });
+
+  // 3 oylik to'lov invoysi (280 Stars)
+  bot.action("pay_stars_3m", async (ctx) => {
+    await ctx.answerCbQuery().catch(() => {});
+    try {
+      await ctx.replyWithInvoice({
+        title: "Yaqin Premium (3 oy)",
+        description: "3 oy davomida barcha cheklovlarsiz Yaqin Premium imkoniyatlari",
+        payload: `premium_3m_${ctx.from.id}_${Date.now()}`,
+        currency: "XTR",
+        prices: [{ label: "3 oylik Yaqin Premium", amount: 280 }],
+      });
+    } catch (err) {
+      console.error("3m invoice error:", err);
+      ctx.reply("❌ Hisob-faktura yaratishda xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
+    }
+  });
+
+  // To'lovdan oldingi tekshiruv (pre_checkout_query)
+  bot.on("pre_checkout_query", async (ctx) => {
+    try {
+      await ctx.answerPreCheckoutQuery(true);
+    } catch (err) {
+      console.error("Pre checkout error:", err);
+      await ctx.answerPreCheckoutQuery(false, "To'lovni amalga oshirishda xatolik yuz berdi.");
+    }
+  });
+
+  // To'lov muvaffaqiyatli amalga oshganda (successful_payment)
+  bot.on("successful_payment", async (ctx) => {
+    try {
+      const payment = ctx.message.successful_payment;
+      const totalAmount = payment.total_amount;
+      const payload = payment.invoice_payload;
+      const months = totalAmount >= 280 || payload.includes("3m") ? 3 : 1;
+
+      const userId = ctx.from.id;
+      const result = await dbStore.activatePremium(userId, months);
+
+      const expDate = result.expiresAt
+        ? new Date(result.expiresAt).toLocaleDateString("uz-UZ")
+        : "";
+
+      await ctx.reply(
+        `🎉 <b>Tabriklaymiz, ${ctx.from.first_name}!</b>\n\n` +
+        `Siz <b>Yaqin Premium (${months} oylik)</b> obunasini muvaffaqiyatli harid qildingiz! ⭐\n\n` +
+        `🗓 Faollik muddati: <b>${expDate}</b> gacha.\n` +
+        `Endi cheksiz Superlike va boshqa barcha imtiyozlardan to'liq foydalanishingiz mumkin!`,
+        {
+          parse_mode: "HTML",
+          ...Markup.inlineKeyboard([
+            [Markup.button.webApp("💜 Yaqin ilovasiga kirish", "https://yaqin-uz.web.app")],
+          ]),
+        }
+      );
+    } catch (err) {
+      console.error("Successful payment handling error:", err);
+      await ctx.reply("To'lov qabul qilindi, ammo hisobingizni yangilashda xatolik yuz berdi. Admin bilan bog'laning.");
     }
   });
 

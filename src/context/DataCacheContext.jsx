@@ -159,6 +159,14 @@ export function DataCacheProvider({ children }) {
     setCandidates((prev) => prev.filter((c) => c.user_id !== userId));
   }, []);
 
+  const restoreCandidateLocally = useCallback((candidate) => {
+    if (!candidate) return;
+    setCandidates((prev) => {
+      if (prev.some((c) => c.user_id === candidate.user_id)) return prev;
+      return [candidate, ...prev];
+    });
+  }, []);
+
   // ---- Matches (MatchesPage) ----
   const [matches, setMatches] = useState([]);
   const [matchesLoading, setMatchesLoading] = useState(false);
@@ -286,6 +294,7 @@ export function DataCacheProvider({ children }) {
         initDatingFilters,
         updateDatingFilters,
         removeCandidateLocally,
+        restoreCandidateLocally,
 
         // Matches
         matches,
